@@ -1,12 +1,12 @@
-package org.firstinspires.ftc.teamcode.SeasonTWO;
+package org.firstinspires.ftc.teamcode.AdvanceCode;
 
-import com.acmerobotics.roadrunner.VelConstraint;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -14,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 @com.acmerobotics.dashboard.config.Config
 public class Config {
     //    Import Components
+    PIDFCoefficients pidfCoefficients;
     HeadingPIDController armPID;
     HeadingPIDController straightPID;
     HeadingPIDController turnPID;
@@ -46,9 +47,27 @@ public class Config {
     public static double aKF = 0;
     final double ticks = 28 * 40 / 3.0; // Ticks formula (Ticks(28) * Internal ratio * external ratio))
 
+    //    Shooter
+    public static double sKP = 0;
+    public static double sKI = 0;
+    public static double sKD = 0;
+    public static double sKF = 0;
+    DcMotorEx Shooter = null;
+    boolean allowShoot;
+
     //    IMU
     IMU imu;
-    boolean IMUAvaiable = false;
+    boolean IMUAvailable = false;
+
+    //    State
+    enum State {
+        STRAIGHT,
+        TURN,
+        DONE,
+    }
+
+    State MoveToInDeg = State.STRAIGHT;
+    State MoveToDegIn = State.TURN;
 
     public void initialize(HardwareMap hardwareMap) {
 //        Drive base initialize
@@ -66,6 +85,9 @@ public class Config {
 
         // SubSystem initialize
         armMotor = hardwareMap.get(DcMotorEx.class, "armMotor");
+        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        Shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
+        Shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 //        IMU
         imu = hardwareMap.get(IMU.class, "imu");
@@ -91,6 +113,18 @@ public class Config {
         armMotor.setVelocity(power * 60);
     }
 
+    public boolean Shooter(double targetVel) {
+        pidfCoefficients = new PIDFCoefficients(sKP, sKI, sKD, sKF);
+        Shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+        if (allowShoot) {
+            Shooter.setVelocity(targetVel);
+        } else {
+            Shooter.setVelocity(0);
+        }
+
+        return false;
+    }
+
     public boolean straightTo(double inches, double heading) {
         if (straightPID == null) straightPID = new HeadingPIDController(dKP, dKI, dKD);
         if (turnPID == null) turnPID = new HeadingPIDController(tKP, tKI, tKD);
@@ -109,17 +143,15 @@ public class Config {
             return true;
         }
         double drivePower = straightPID.calculateDegree(inches, currentInches);
-        drivePower = Range.clip(drivePower, -MIN_DRIVE_POWER, MAX_DRIVE_POWER);
-
-//        Ini tuh biar kecepatanya jika kurang dari 0.6 langsung dibulatkan ke 0.6
-        if (Math.abs(drivePower) < MIN_DRIVE_POWER) {
-            drivePower = MIN_DRIVE_POWER * Math.signum(drivePower);
-        }
+//        klo drivepower nya - di abs sama absDrive jadi nya gk ada - nah terus math.signum tuh tugasnya buat ngembaliin tanda di Min nya jadi bakal -6, 1
+//        klo gk pake signum ntr clip hasilnya malah 0.6 bukan - 0.6 jadi yang harusnya mundur malah maju.
+        double absDrive = Range.clip(Math.abs(drivePower), MIN_DRIVE_POWER, MAX_DRIVE_POWER);
+        drivePower = absDrive * Math.signum(drivePower);
 
 //        Biar tetep lurus dan gk belok miring atau gmn lah misal ntr ditabrak
 //        tpi tetep bisa ke degree 0 biar gk salah jalur
         double headingCorrection = 0;
-        if (IMUAvaiable) {
+        if (IMUAvailable) {
             double currentYaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
             headingCorrection = turnPID.calculateDegree(heading, currentYaw);
         } else {
@@ -127,7 +159,8 @@ public class Config {
             double encoderDifferent = leftInches - rightInches;
             headingCorrection = turnPID.calculateDegree(heading, encoderDifferent);
         }
-        headingCorrection = Range.clip(headingCorrection, -MIN_TURN_POWER, MAX_TURN_POWER);
+        double absHeading = Range.clip(Math.abs(headingCorrection), MIN_TURN_POWER, MAX_TURN_POWER);
+        headingCorrection = absHeading * Math.signum(headingCorrection);
 
 //        Jadinya ini gk bakal miring gitu klo pun miring bakal langsung di koreksi dan heading nya jadi 0 lagi.
         leftMotor.setPower(drivePower + headingCorrection);
@@ -149,11 +182,8 @@ public class Config {
             return true;
         }
         double turnPower = turnPID.calculateDegree(targetDegrees, currentHeading);
-        turnPower = Range.clip(turnPower, -MIN_TURN_POWER, MAX_TURN_POWER);
-
-        if (Math.abs(turnPower) < MIN_TURN_POWER) {
-            turnPower = MIN_TURN_POWER * Math.signum(turnPower);
-        }
+        double absTurn = Range.clip(Math.abs(turnPower), MIN_TURN_POWER, MAX_TURN_POWER);
+        turnPower = absTurn * Math.signum(turnPower);
 
         leftMotor.setPower(turnPower);
         rightMotor.setPower(-turnPower);
@@ -162,7 +192,7 @@ public class Config {
     }
 
     public double getHeading() {
-        if (IMUAvaiable) {
+        if (IMUAvailable) {
             return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         }
         double leftInches = leftMotor.getCurrentPosition() * INCHES_PER_TICKS;
@@ -174,14 +204,45 @@ public class Config {
     }
 
     public boolean moveToInDeg(double inches, double sHeading, double turnDegree) {
-        straightTo(inches, sHeading);
-        turnTo(turnDegree);
+        switch (MoveToInDeg) {
+            case STRAIGHT:
+                if (straightTo(inches, sHeading)) {
+                    MoveToInDeg = State.TURN;
+                }
+                break;
+
+            case TURN:
+                if (turnTo(turnDegree)) {
+                    MoveToInDeg = State.DONE;
+                }
+                break;
+
+            case DONE:
+                MoveToInDeg = State.STRAIGHT;
+                return true;
+        }
         return false;
     }
 
     public boolean moveToDegIn(double turnDegree, double inches, double sHeading) {
-        turnTo(turnDegree);
-        straightTo(inches, sHeading);
+
+        switch (MoveToDegIn) {
+            case TURN:
+                if (turnTo(turnDegree)) {
+                    MoveToDegIn = State.STRAIGHT;
+                }
+                break;
+
+            case STRAIGHT:
+                if (straightTo(inches, sHeading)) {
+                    MoveToDegIn = State.DONE;
+                }
+                break;
+
+            case DONE:
+                MoveToDegIn = State.TURN;
+                return true;
+        }
         return false;
     }
 
@@ -190,9 +251,25 @@ public class Config {
         rightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        turnPID = null;
         straightPID = null;
 
         return straightTo(inches, sHeading);
+    }
+
+    public boolean resetAndTurnTo(double turnDegree) {
+        leftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        turnPID = null;
+
+        return turnTo(turnDegree);
+    }
+
+    public void resetAllEncoders() {
+        leftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 }

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.SeasonTWO;
+package org.firstinspires.ftc.teamcode.AdvanceCode;
 
 
 public class HeadingPIDController {
@@ -15,12 +15,11 @@ public class HeadingPIDController {
 
     public double calculateRadians(double targetHeading, double currentHeading) {
 //        P = Error
-        double error = targetHeading - currentHeading;
-        error = angleWrapRadians(error);
+        double error = angleWrapRadians(targetHeading - currentHeading);
 
 //        Integral = Disappear Error Kecil
         integralSum += error;
-        integralSum = Math.max(-integralLimit / kI, Math.min(integralLimit, integralSum));
+        integralSum = Math.max(-integralLimit, Math.min(integralLimit, integralSum));
 
 //        Derivative = biar gk terlalu kenceng
         double derivative = error - lastError;
@@ -31,12 +30,11 @@ public class HeadingPIDController {
     }
 
     public double calculateDegree(double targetHeading, double currentHeading) {
-        double error = targetHeading - currentHeading;
-        error = angleWrapDegree(error);
+        double error = angleWrapDegree(targetHeading - currentHeading);
 
 //        Integral = Disappear Error Kecil
         integralSum += error;
-        integralSum = Math.max(-integralLimit / kI, Math.min(integralLimit, integralSum));
+        integralSum = Math.max(-integralLimit, Math.min(integralLimit, integralSum));
 
 //        Derivative = biar gk terlalu kenceng
         double derivative = error - lastError;
@@ -57,10 +55,10 @@ public class HeadingPIDController {
     }
 
     public double angleWrapRadians(double radians) {
-        while (radians < Math.PI) {
+        while (radians > Math.PI) {
             radians -= 2 * Math.PI;
         }
-        while (radians > -Math.PI) {
+        while (radians < -Math.PI) {
             radians += 2 * Math.PI;
         }
         return radians;
