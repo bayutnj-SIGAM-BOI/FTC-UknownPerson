@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Size;
 
-import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -19,16 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@Config
-public class AprilTagWebcam {
+public class apriltag {
     private AprilTagProcessor aprilTagProcessor;  // Made private and fixed assignment
     private VisionPortal visionPortal;
 
     private List<AprilTagDetection> detectedTag = new ArrayList<>();
 
     private Telemetry telemetry;
-    public static int exposure = 4;
-    public static int gain = 230;
 
     /**
      * Initialize the AprilTag detection system
@@ -55,7 +51,7 @@ public class AprilTagWebcam {
         visionPortal = builder.build();
 
         // Set manual exposure for consistent lighting
-        setManualExposure(exposure, gain);
+        setManualExposure(6, 240);
 
         telemetry.addData("AprilTag", "Initialized");
         telemetry.update();

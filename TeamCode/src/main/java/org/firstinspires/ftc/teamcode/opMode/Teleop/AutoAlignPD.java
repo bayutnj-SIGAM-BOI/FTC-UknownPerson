@@ -22,7 +22,7 @@ public class AutoAlignPD extends OpMode {
     public static double kD = 0.3;
     double error = 0;
     double lastError = 0;
-    double goalX = 0;
+    double goalX = 0; //Offset
     double angleTolerance = 0.4;
     double curTime = 0;
     double lastTime = 0;
@@ -36,6 +36,7 @@ public class AutoAlignPD extends OpMode {
     //
     TelemetryPacket packet = new TelemetryPacket();
     FtcDashboard dashboard = FtcDashboard.getInstance();
+    
 
     @Override
     public void init() {
@@ -64,12 +65,13 @@ public class AutoAlignPD extends OpMode {
     public void loop() {
         double leftPower, rightPower;
 
-         forward = -gamepad1.left_stick_y;
-         rotate = gamepad1.right_stick_x;
+        forward = -gamepad1.left_stick_y;
+        rotate = gamepad1.right_stick_x;
 
         //get Apriltag Info
         aprilTagWebcam.update();
-        AprilTagDetection id = aprilTagWebcam.getTagBySpesificId(21);
+        AprilTagDetection id = aprilTagWebcam.getTagBySpesificId(22);
+
 
         if (gamepad1.right_bumper) {
             if (id != null) {
@@ -109,6 +111,7 @@ public class AutoAlignPD extends OpMode {
         packet.put("kD", kD);
         packet.put("error", error);
         packet.put("Target error", goalX);
+        packet.put("ID", id.ftcPose.bearing);
         dashboard.sendTelemetryPacket(packet);
 
     }

@@ -17,7 +17,8 @@ public class meepMeep {
                 .build();
 
         Go2Steam.runAction(Go2Steam.getDrive().actionBuilder(new Pose2d(47, 0, 0))
-                .lineToX(-65)
+                .lineToX(-0.2)
+                .turn(Math.toRadians(180))
                 .build());
 
         meepMeep.setBackground(MeepMeep.Background.FIELD_DECODE_OFFICIAL)

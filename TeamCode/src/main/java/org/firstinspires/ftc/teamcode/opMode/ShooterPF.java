@@ -41,7 +41,7 @@ public class ShooterPF extends OpMode {
         Launcher = hardwareMap.get(Servo.class, "Launcher");
         Launcher.setPosition(0.875);
 
-        lastPIDF = new PIDFCoefficients(kP, 0 ,0 , kF);
+        lastPIDF = new PIDFCoefficients(kP, 0, 0, kF);
         flyWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         flyWheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, lastPIDF);
     }
@@ -63,7 +63,7 @@ public class ShooterPF extends OpMode {
         }
         lastY = gamepad1.y;
 
-        PIDFCoefficients current = new PIDFCoefficients(kP, 0 ,0 , kF);
+        PIDFCoefficients current = new PIDFCoefficients(kP, 0, 0, kF);
         if (!current.equals(lastPIDF)) {
             flyWheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, current);
             lastPIDF = current;
@@ -76,7 +76,6 @@ public class ShooterPF extends OpMode {
         }
 
 
-
         packet.put("Target RPM", targetRPM);
         packet.put("Velocity", flyWheel.getVelocity());
         packet.put("Error", targetRPM - flyWheel.getVelocity());
@@ -87,6 +86,6 @@ public class ShooterPF extends OpMode {
         packet.put("ShooterOn", ShooterOn ? 1 : 0);
 
 // Kirim ke Dashboard
-//        dashboard.sendTelemetryPacket(packet);
+        dashboard.sendTelemetryPacket(packet);
     }
 }

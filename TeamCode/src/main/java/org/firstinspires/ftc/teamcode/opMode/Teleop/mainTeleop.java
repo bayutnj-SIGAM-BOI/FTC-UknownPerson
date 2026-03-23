@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.opMode.Teleop;
 
 import static android.os.SystemClock.sleep;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -15,6 +16,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.teamcode.AprilTagWebcam;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
+@Config
 @TeleOp(name = "Teleop", group = "Go2Steam")
 public class mainTeleop extends OpMode {
     private DcMotor leftDrive = null;
@@ -28,17 +30,19 @@ public class mainTeleop extends OpMode {
     boolean LauncherLock = true;
     PIDFCoefficients lastPIDF;
     public static double kP = 200;
-    public static double kF = 12.6;
+    public static double kF = 12.74;
 
     // Auto align
     private final AprilTagWebcam aprilTagWebcam = new AprilTagWebcam();
 
     // PD Controller
-    public static double kPAuto = 0.1;
-    public static double kD = 0.3;
+    public static double kPAuto = 0.14;
+    public static double kD = 0.21;
     double error = 0;
     double lastError = 0;
-    double goalX = 0;
+    double[] goalX = {0, 3, -3, 6, -6, 10, -10}; //Offset
+    int index = 0;
+    //    double goalX = 0;
     double angleTolerance = 0.4;
     double curTime = 0;
     double lastTime = 0;
@@ -48,6 +52,8 @@ public class mainTeleop extends OpMode {
 
     @Override
     public void init() {
+        aprilTagWebcam.init(hardwareMap, telemetry);
+
 //        ================ Hardware initialize ================
         leftDrive = hardwareMap.get(DcMotor.class, "left_motor_Drive");
         rightDrive = hardwareMap.get(DcMotor.class, "right_motor_Drive");
@@ -91,11 +97,31 @@ public class mainTeleop extends OpMode {
 
         //get Apriltag Info
         aprilTagWebcam.update();
-        AprilTagDetection id = aprilTagWebcam.getTagBySpesificId(21);
+        AprilTagDetection id20 = aprilTagWebcam.getTagBySpesificId(21);
+        AprilTagDetection id21 = aprilTagWebcam.getTagBySpesificId(22);
 
-        if (gamepad1.left_trigger > 0.3) {
-            if (id != null) {
-                error = goalX - id.ftcPose.bearing;
+        if (gamepad1.xWasPressed()) {
+            index = (index + 1) % goalX.length;
+        }
+
+        boolean isAutoAligning = false;
+        AprilTagDetection targetTag = null;
+
+        if (gamepad1.left_bumper && id20 != null) {
+            targetTag = id20;
+            isAutoAligning = true;
+            autoAlign = true;
+        } else if (gamepad1.left_trigger > 0.5 && id21 != null) {
+            targetTag = id21;
+            isAutoAligning = true;
+            autoAlign = true;
+        } else {
+            autoAlign = false;
+        }
+
+        if (isAutoAligning) {
+            if (targetTag != null) {
+                error = goalX[index] - targetTag.ftcPose.bearing;
 
                 if (Math.abs(error) < angleTolerance) {
                     rotate = 0;
@@ -131,7 +157,7 @@ public class mainTeleop extends OpMode {
         // Shooter
         if (!ShooterOn && !LauncherLock) { // So if Shooter is not on and LaunchLock is false, LaunchLock will be true, which makes the Launcher not work;
             LauncherLock = true;
-        } else if (gamepad1.a && ShooterOn) { // And if gamepad1.a is pressed && the Shoter is active you can use the Launcher
+        } else if (gamepad1.a && ShooterOn) { // And if gamepad1.a is pressed && the Shoter is active, you can use the Launcher
             LauncherLock = false;
             Launcher.setPosition(0.5);
             sleep(300);
@@ -171,15 +197,55 @@ public class mainTeleop extends OpMode {
             flyWheel.setVelocity(0);
         }
 
-        telemetry.addLine("===== TELEOP STATUS =====");
         telemetry.addData("MODE", autoAlign ? "AUTO ALIGN" : "MANUAL");
         telemetry.addData("Shooter Status", ShooterOn ? "ON" : "OFF");
-        telemetry.addData("Launcher Status", LauncherLock ? "OFF" : "ON");
+        telemetry.addData("Launcher Status", LauncherLock ? "LOCKED" : "READY");
         telemetry.addData("Left Power", "%.2f", leftDrive.getPower());
         telemetry.addData("Right Power", "%.2f", rightDrive.getPower());
-        telemetry.addData("Target Vel", "%.2f", targetRPM);
-        telemetry.addData("kF", kF);
-        telemetry.addData("Velocity", "%.4f RPM", flyWheel.getVelocity());
+        telemetry.addData("Target RPM", "%.0f", targetRPM);
+        telemetry.addData("Actual RPM", "%.0f", flyWheel.getVelocity());
+        telemetry.addData("kF", "%.2f", kF);
+
+        telemetry.addLine("\n===== APRILTAG WEBCAM =====");
+        telemetry.addData("Total Tags Detected", aprilTagWebcam.getDetectedTagCount());
+        telemetry.addData("ID 20 Status", id20 != null ? "✓ DETECTED" : "✗ Not Found");
+        telemetry.addData("ID 24 Status", id21 != null ? "✓ DETECTED" : "✗ Not Found");
+
+        if (id20 != null) {
+            telemetry.addLine("\n--- AprilTag ID 20 ---");
+            telemetry.addData("  Bearing", "%.2f°", id20.ftcPose.bearing);
+            telemetry.addData("  Range", "%.1f cm", id20.ftcPose.range);
+            telemetry.addData("  Position X", "%.1f cm", id20.ftcPose.x);
+            telemetry.addData("  Position Y", "%.1f cm", id20.ftcPose.y);
+            telemetry.addData("  Position Z", "%.1f cm", id20.ftcPose.z);
+            telemetry.addData("  Yaw", "%.1f°", id20.ftcPose.yaw);
+        }
+
+        if (id21 != null) {
+            telemetry.addLine("\n--- AprilTag ID 24 ---");
+            telemetry.addData("  Bearing", "%.2f°", id21.ftcPose.bearing);
+            telemetry.addData("  Range", "%.1f cm", id21.ftcPose.range);
+            telemetry.addData("  Position X", "%.1f cm", id21.ftcPose.x);
+            telemetry.addData("  Position Y", "%.1f cm", id21.ftcPose.y);
+            telemetry.addData("  Position Z", "%.1f cm", id21.ftcPose.z);
+            telemetry.addData("  Yaw", "%.1f°", id21.ftcPose.yaw);
+        }
+
+        if (autoAlign) {
+            telemetry.addLine("\n===== AUTO ALIGN DATA =====");
+            telemetry.addData("Active Target", targetTag != null ? "ID " + targetTag.id : "None");
+            telemetry.addData("Goal Offset", "%.2f°", goalX[index]);
+            telemetry.addData("Current Error", "%.2f°", error);
+            telemetry.addData("Rotate Power", "%.3f", rotate);
+            telemetry.addData("Within Tolerance", Math.abs(error) < angleTolerance ? "YES" : "NO");
+        }
+
+        telemetry.addLine("\n===== CONTROLS =====");
+        telemetry.addData("LB (ID 20)", "Auto Align");
+        telemetry.addData("LT (ID 24)", "Auto Align");
+        telemetry.addData("X Button", "Cycle Offset");
+        telemetry.addData("Current Offset", index + " (" + goalX[index] + "°)");
+
         telemetry.update();
     }
 
@@ -188,4 +254,3 @@ public class mainTeleop extends OpMode {
         aprilTagWebcam.stop();
     }
 }
-

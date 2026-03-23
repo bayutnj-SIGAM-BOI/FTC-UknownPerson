@@ -69,16 +69,17 @@ public final class TankDrive {
         public RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection =
                 RevHubOrientationOnRobot.LogoFacingDirection.UP;
         public RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection =
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+                RevHubOrientationOnRobot.UsbFacingDirection.RIGHT;
 
         // drive model parameters
-        public double inPerTick = 0.002988295841;
-        public double trackWidthTicks = 0;
+//        public double inPerTick = 0.002988295841;
+        public double inPerTick = -0.01032998565;
+        public double trackWidthTicks = 20736;
 
         // feedforward parameters (in tick units)
-        public double kS = 0;
-        public double kV = 0;
-        public double kA = 0;
+        public double kS = 2.5852282095406727;
+        public double kV = 0.006215612318359448;
+        public double kA = 0.00015;
 
         // path profile parameters (in inches)
         public double maxWheelVel = 50;
@@ -90,12 +91,12 @@ public final class TankDrive {
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double ramseteZeta = 1; // in the range (0, 1)
+        public double ramseteZeta = 0.7; // in the range (0, 1)
         public double ramseteBBar = 2.0; // positive
 
         // turn controller gains
-        public double turnGain = 0;
-        public double turnVelGain = 2500;
+        public double turnGain = 3.0;
+        public double turnVelGain = 0;
     }
 
     public static Params PARAMS = new Params();
@@ -153,8 +154,8 @@ public final class TankDrive {
                 this.rightEncs = Collections.unmodifiableList(rightEncs);
             }
 
-            // TODO: reverse encoder directions if needed
-            //   leftEncs.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
+//             TODO: reverse encoder directions if needed
+               leftEncs.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
 
             this.pose = pose;
         }
@@ -249,9 +250,9 @@ public final class TankDrive {
         }
 
         // TODO: reverse motor directions if needed
-        //   leftMotors.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
-        leftMotors.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
-        rightMotors.get(0).setDirection(DcMotorSimple.Direction.FORWARD);
+//           leftMotors.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
+        rightMotors.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
+        leftMotors.get(0).setDirection(DcMotorSimple.Direction.FORWARD);
 
         // TODO: make sure your config has an IMU with this name (can be BNO or BHI)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
@@ -491,7 +492,7 @@ public final class TankDrive {
             i++;
         }
 
-        c.setStrokeWidth(1);
+        c.setStrokeWidth(2);
         c.setStroke("#3F51B5");
         c.strokePolyline(xPoints, yPoints);
     }

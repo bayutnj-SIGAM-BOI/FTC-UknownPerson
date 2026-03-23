@@ -5,11 +5,14 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name = "RedSmallLaunchZone", group = "Go2steam")
-public class RedSmallLaunchZone extends LinearOpMode{
+import java.lang.annotation.Target;
+
+@Autonomous(name = "RedZone", group = "Go2steam")
+public class RedZone extends LinearOpMode{
 
     private DcMotor leftDrive, rightDrive = null;
     private DcMotorEx flyWheel = null;
@@ -19,14 +22,16 @@ public class RedSmallLaunchZone extends LinearOpMode{
 //    Drive Train motors setting
     static final double WHEEL_DIAMETER_INCHES = 3.54331; // 90mm In Inches 3,5 or more
     static final double COUNTS_PER_MOTOR_REV = 288.0; // CoreHex counts per Rev//
-    static final double DRIVE_GEAR_REDUCTION = 1.0; // use no gear ration added//
+    static final double DRIVE_GEAR_REDUCTION = 1.0 / 1.0; // use no gear ration added//
 
     static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * Math.PI); // Formula to convert ticks to inches FROM Google
 
 //    FLyWheels setting
-    static final double FLYWHEEL_TARGET_RPM = 3600; // Shooter wheel target RPM
-    static final double FLYWHEEL_COUNTS_PER_REV= 28.0 * 3.0; // 28.0 is t he REV HDX Motor Revolution * 3.0
-    static final double FLYWHEEL_TPS = (FLYWHEEL_TARGET_RPM * FLYWHEEL_COUNTS_PER_REV) / 60.0; // flywheel target RPM * Counts per revolution from the motor spec and divide by 60.0, that mean a minute
+public static double kP = 200;
+public static double kF = 12.6;
+    double TargetRPM = 1800;
+    PIDFCoefficients lastPIDF;
+
 
 
     @Override
@@ -39,9 +44,10 @@ public class RedSmallLaunchZone extends LinearOpMode{
 
 
 //        set Direction to Reverse
-        rightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
-        leftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightDrive.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        flyWheel.setDirection(DcMotorSimple.Direction.REVERSE);
         flyWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 //        Encoder Setup
@@ -50,21 +56,16 @@ public class RedSmallLaunchZone extends LinearOpMode{
 
         leftDrive.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         rightDrive.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        Launcher.setPosition(0.75);
 
-
+        lastPIDF = new PIDFCoefficients(kP, 0 ,0 , kF);
+        flyWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        flyWheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, lastPIDF);
 
 
 //        Code Here
-//
-        driveEncoders(16, -16, 0.50, 1); //Turn right 24inches
+        waitForStart();
+        sleep(1000);
         Shoot3x(); //Shoot the 3artifacts at once
-        driveEncoders(16, -16, 0.50, 1); //Turn right 24inches to face the loading zone
-        driveEncoders(72, 72, 0.90, 3); //move forward 72 inches to zone
-        sleep(5000); //waiting human player to throw the artifact into the robot
-        driveEncoders( -72,-72, 0.90, 3); // Go back to the small launch zone for 72 inches
-        driveEncoders(  -16, 16, 0.70, 1); // turn left to face the goal for shooting the balls
-        Shoot3x(); //shoot 3 artifact at once
 
         telemetry.addData("Path", "Complete");
         telemetry.update();
@@ -75,7 +76,6 @@ public class RedSmallLaunchZone extends LinearOpMode{
     }
 
 //    setup Movement with Encoder
-
     private void driveEncoders(double leftTarget, double rightTarget, double speed, long TimeoutSecs) {
         int newleftTarget;
         int newrightTarget;
@@ -95,7 +95,7 @@ public class RedSmallLaunchZone extends LinearOpMode{
             leftDrive.setPower(Math.abs(speed));
             rightDrive.setPower(Math.abs(speed));
 
-            while (opModeIsActive() && runtime.seconds() <TimeoutSecs && leftDrive.isBusy() && rightDrive.isBusy()) {
+            while (opModeIsActive() && runtime.milliseconds() <TimeoutSecs && leftDrive.isBusy() && rightDrive.isBusy()) {
                telemetry.addData("Running to", " %7d :%7d", newleftTarget, newrightTarget);
                telemetry.addData("Current Position", " %7d :%7d", leftDrive.getCurrentPosition(), rightDrive.getCurrentPosition());
                telemetry.update();
@@ -110,17 +110,21 @@ public class RedSmallLaunchZone extends LinearOpMode{
         }
     }
 
-    private void Shooters(long delayShoot) {
+    private void Shooters() {
+        PIDFCoefficients current = new PIDFCoefficients(kP, 0 ,0 , kF);
+        if (!current.equals(lastPIDF)) {
+            flyWheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, current);
+            lastPIDF = current;
+        }
         if (opModeIsActive()) {
-         sleep(500);
 
-         flyWheel.setVelocity(FLYWHEEL_TPS);
-         Launcher.setPosition(0.3);
-         sleep(delayShoot);
+            sleep(450);
+         flyWheel.setVelocity(TargetRPM);
+         sleep(900);
+         Launcher.setPosition(0.5);
 
-         sleep(500);
-
-         Launcher.setPosition(0.75);
+         sleep(300);
+         Launcher.setPosition(0.875);
          flyWheel.setVelocity(0);
 
 
@@ -130,8 +134,8 @@ public class RedSmallLaunchZone extends LinearOpMode{
     }
 
     private void Shoot3x() {
-        for (int a = 0; a < 3; a++) {
-            Shooters(300);
+        for (int a = 0; a < 4;  a++) {
+            Shooters();
             sleep(300);
         }
     }
