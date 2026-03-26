@@ -175,7 +175,7 @@ public class Config {
         double pid = armPID.calculateDegree(targetDegree, currentDegree);
 //        Ngasih power extra
         double angleRad = Math.toRadians(targetDegree);
-        double feedforward = Math.cos(angleRad) * aKF;
+        double feedforward = Math.cos(angleRad) * aKF; // ini menghasilkan  kencang diawal tpi semakin dekat dengan target dia makin pelan
         double power = pid + feedforward;
         armMotor.setVelocity(power * 60);
     }
@@ -341,7 +341,7 @@ public class Config {
         double rightBackInches = rightBackMotor.getCurrentPosition() * INCHES_PER_TICKS;
 
         double currentInches = (leftInches + rightInches + leftBackInches + rightBackInches) / 4.0; // Inches / 4.0 karena ada 4 motor
-        double error = currentInches - splineInches;
+        double error = splineInches / currentInches;
 
         if (Math.abs(error) < SPLINE_TOLERANCE_INCHES) {
             leftMotor.setPower(0);
@@ -357,30 +357,31 @@ public class Config {
         }
 
 //        progress 0 -> 1;
-        double t = Math.min(Math.max(currentInches / splineInches, 0.0), 1.0);
+        double Progress = Math.min(Math.max(currentInches / splineInches, 0.0), 1.0);
 //        * curveFactor biar ntr bisa makin tajem atau pu nenggak
-        double angle = Math.min(t * (Math.PI / 2.0) * curveFactor, Math.PI / 2.0);
+        double angle = Math.min(Progress * (Math.PI / 2.0) * curveFactor, Math.PI / 2.0);
+//        Tanh tuh mempersmoothhh aja
+        double theta = Math.tanh(angle * tangent);
 //        cos untuk straightnya. cos dari nilai 1.0 -> 0.0
-        double cos = Math.cos(angle); // Math.cos disin waktu diawal kenceng tpi diakhir makin pelan
+        double cos = Math.cos(theta * Math.PI / 2); // Math.cos disin waktu diawal kenceng tpi diakhir makin pelan
 //        sin untuk curve
 //        sin dari nilai 0.0 -> 1.0
-        double sin = Math.sin(angle); // Math.sin disini untuk biar power curve nya itu kecil tpi pas mau akhiran kenceng;
+        double sin = Math.sin(theta * Math.PI / 2); // Math.sin disini untuk biar power curve nya itu kecil tpi pas mau akhiran kenceng;
 //        disini cos nya untuk kenceng diawal berarti straight, dan sin untuk kenceng diakhir yang membuat curve spline yang smooth;
-        double theta = Math.tanh(angle);
 
         double splinePower = splinePID.calculateInches(splineInches, currentInches);
         double absPower = Range.clip(Math.abs(splinePower), MIN_DRIVE_POWER, MAX_DRIVE_POWER);
         splinePower = absPower * Math.signum(splinePower);
 
-        double tHeading = t * headingRadians;
+        double targetHeading = Progress * headingRadians;
 
 //        Heading IMU
         double currentYaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-        double headingError = turnPID.calculateRadians(tHeading, currentYaw);
+        double headingError = turnPID.calculateRadians(targetHeading, currentYaw);
         double turnPower = Range.clip(headingError, -MAX_TURN_POWER, MAX_TURN_POWER);
 
-        double drive = splinePower * cos;
-        double turn = turnPower * sin;
+        double drive = splinePower * cos; // dikali cos biar seiring waktu robot maju kecepatanya berkurang
+        double turn = turnPower * sin; // dikali cos biar seiring waktu spline robot maju nya makin kenceng
 
         leftMotor.setPower(drive + turn);
         rightMotor.setPower(drive - turn);
