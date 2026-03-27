@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.AdvanceCode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -11,13 +12,17 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.TankDrive;
 
 @com.acmerobotics.dashboard.config.Config
 public class Config {
     //    Import Components
     FtcDashboard ftcDashboard = FtcDashboard.getInstance();
     PIDFCoefficients pidfCoefficients;
+    GoBildaPinpointDriver pinPoint;
     HeadingPIDController armPID;
     HeadingPIDController straightPID;
     HeadingPIDController turnPID;
@@ -45,13 +50,13 @@ public class Config {
     public static double sKD = 0;
     public static double sKF = 200;
     //    Drive Constants
-    final double WHEEL_DIAMETER_INCHES = 4.33071;
+    final double WHEEL_DIAMETER_INCHES = 90 / 25.4;
     public static double TICKS_PER_REV = 118.09090909091;
     final double INCHES_PER_TICKS = (Math.PI * WHEEL_DIAMETER_INCHES) / TICKS_PER_REV;
 
     final double SPLINE_TOLERANCE_INCHES = 2.0;
     final double STRAFE_TOLERANCE_INCHES = 2.0;
-    final double STRAIGHT_TOLERANCE_INCHES = 2.0;
+    final double STRAIGHT_TOLERANCE_INCHES = 3.0;
     final double TURN_TOLERANCE_DEGREE = 1.5;
     final double MAX_DRIVE_POWER = 0.4;
     final double MIN_DRIVE_POWER = 0.3;
@@ -66,6 +71,8 @@ public class Config {
     public static double aKD = 0;
     public static double aKF = 0;
     public static double ticks = 28.0 * 40.0 / 3.0; // Ticks formula (Ticks(28) * Internal ratio * external ratio))
+
+    boolean pinpointAvailable = false;
 
     //    Shooter
 
@@ -93,8 +100,11 @@ public class Config {
     boolean useMecanum, useTankDrive;
     boolean useArm, useShoot, useIntake;
 
-    public void initialize(HardwareMap hardwareMap, boolean useMecanum, boolean useTankDrive, boolean useArm, boolean useShoot, boolean useIntake) {
-        this.useMecanum = useMecanum;
+    private double straightStartX = 0, straightStartY = 0;
+    private double strafeStartX = 0, strafeStartY = 0;
+    private double splineStartX = 0, splineStartY = 0;
+
+    public void initialize(HardwareMap hardwareMap, boolean useTankDrive, boolean useArm, boolean useShoot, boolean useIntake) {
         this.useTankDrive = useTankDrive;
 
         this.useArm = useArm;
@@ -114,8 +124,8 @@ public class Config {
 
             leftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             rightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        }
-        if (useMecanum) {
+            useMecanum = false;
+        } else {
             leftMotor = hardwareMap.get(DcMotor.class, "leftMotor");
             rightMotor = hardwareMap.get(DcMotor.class, "rightMotor");
             leftBackMotor = hardwareMap.get(DcMotor.class, "leftbackMotor");
@@ -135,7 +145,16 @@ public class Config {
             leftBackMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             rightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             rightBackMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            useMecanum = true;
+            this.useTankDrive = false;
         }
+
+        imu = hardwareMap.get(IMU.class, "imu");
+        IMU.Parameters imuParams = new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.LEFT));
+        imu.initialize(imuParams);
+        imu.resetYaw();
 
         // SubSystem initialize
         if (useArm) {
@@ -153,15 +172,6 @@ public class Config {
             Intake = hardwareMap.get(DcMotorEx.class, "Intake");
             Intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
-
-//        IMU
-        imu = hardwareMap.get(IMU.class, "imu");
-        IMU.Parameters imuParams = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.LEFT));
-        imu.initialize(imuParams);
-        imu.resetYaw();
-        IMUAvailable = true;
 
     }
 
@@ -206,31 +216,33 @@ public class Config {
         if (!hasDrive) return true;
 
         if (straightPID == null) straightPID = new HeadingPIDController(dKP, dKI, dKD);
+
         if (turnPID == null) turnPID = new HeadingPIDController(tKP, tKI, tKD);
 
 
-        double leftInches = leftMotor.getCurrentPosition() * INCHES_PER_TICKS;
-        double rightInches = rightMotor.getCurrentPosition() * INCHES_PER_TICKS;
         double currentInches;
+        double leftInches = 0, rightInches = 0;
+
         if (useMecanum && leftBackMotor != null && rightBackMotor != null) {
+            leftInches = leftMotor.getCurrentPosition() * INCHES_PER_TICKS;
+            rightInches = rightMotor.getCurrentPosition() * INCHES_PER_TICKS;
             double leftBackInches = leftBackMotor.getCurrentPosition() * INCHES_PER_TICKS;
             double rightBackInches = rightBackMotor.getCurrentPosition() * INCHES_PER_TICKS;
             currentInches = (leftInches + rightInches + leftBackInches + rightBackInches) / 4.0;
         } else {
             // Tank drive 2 motor
+            leftInches = leftMotor.getCurrentPosition() * INCHES_PER_TICKS;
+            rightInches = rightMotor.getCurrentPosition() * INCHES_PER_TICKS;
             currentInches = (leftInches + rightInches) / 2.0;
         }
         double error = inches - currentInches;
 
-//        ini kalau error udah kurang dari 0.5inches di stop tuh motor nya
+//        ini kalau error udah kurang dari 3inches di stop tuh motor nya
         if (Math.abs(error) < STRAIGHT_TOLERANCE_INCHES) {
             leftMotor.setPower(0);
             rightMotor.setPower(0);
-            leftBackMotor.setPower(0);
-            rightBackMotor.setPower(0);
-            resetAllEncoders();
-            straightPID.reset();
-            turnPID.reset();
+            if (leftBackMotor != null) leftBackMotor.setPower(0);
+            if (rightBackMotor != null) rightBackMotor.setPower(0);
             straightPID = null;
             turnPID = null;
             return true;
@@ -274,8 +286,8 @@ public class Config {
         if (Math.abs(error) < TURN_TOLERANCE_DEGREE) {
             leftMotor.setPower(0);
             rightMotor.setPower(0);
-            leftBackMotor.setPower(0);
-            rightBackMotor.setPower(0);
+            if (leftBackMotor != null) leftBackMotor.setPower(0);
+            if (rightBackMotor != null) rightBackMotor.setPower(0);
             resetAllEncoders();
             turnPID.reset();
             turnPID = null;
@@ -284,8 +296,7 @@ public class Config {
         double turnPower = turnPID.calculateDegree(targetDegrees, currentHeading);
         double absTurn = Range.clip(Math.abs(turnPower), MIN_TURN_POWER, MAX_TURN_POWER);
         turnPower = absTurn * Math.signum(turnPower);
-//        double turnPower = (error * tKP);  // Sementara tanpa I dan D dulu!
-//        turnPower = Range.clip(turnPower, -MAX_TURN_POWER, MAX_TURN_POWER);
+//
 
 //        Disini ada if(leftbackmotor != null ) but yang mechanum jadi jika si init nya itu mechanum true itu jalan, begitu sebaliknya;
         leftMotor.setPower(turnPower);
@@ -303,7 +314,6 @@ public class Config {
         double leftBackInches = leftBackMotor.getCurrentPosition() * INCHES_PER_TICKS;
         double rightInches = rightMotor.getCurrentPosition() * INCHES_PER_TICKS;
         double rightBackInches = rightBackMotor.getCurrentPosition() * INCHES_PER_TICKS;
-
         double currentInches = (leftInches - rightInches - leftBackInches + rightBackInches) / 4.0;
         double error = strafeInches - currentInches;
 
@@ -335,13 +345,15 @@ public class Config {
         if (splinePID == null) splinePID = new HeadingPIDController(dKP, dKI, dKD);
         if (turnPID == null) turnPID = new HeadingPIDController(tKP, tKI, tKD);
 
+
         double leftInches = leftMotor.getCurrentPosition() * INCHES_PER_TICKS;
         double rightInches = rightMotor.getCurrentPosition() * INCHES_PER_TICKS;
         double leftBackInches = leftBackMotor.getCurrentPosition() * INCHES_PER_TICKS;
         double rightBackInches = rightBackMotor.getCurrentPosition() * INCHES_PER_TICKS;
-
         double currentInches = (leftInches + rightInches + leftBackInches + rightBackInches) / 4.0; // Inches / 4.0 karena ada 4 motor
-        double error = splineInches / currentInches;
+
+
+        double error = splineInches - currentInches;
 
         if (Math.abs(error) < SPLINE_TOLERANCE_INCHES) {
             leftMotor.setPower(0);
@@ -375,11 +387,10 @@ public class Config {
 
         double targetHeading = Progress * headingRadians;
 
-//        Heading IMU
+//        Heading IMU && Pinpoint
         double currentYaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         double headingError = turnPID.calculateRadians(targetHeading, currentYaw);
         double turnPower = Range.clip(headingError, -MAX_TURN_POWER, MAX_TURN_POWER);
-
         double drive = splinePower * cos; // dikali cos biar seiring waktu robot maju kecepatanya berkurang
         double turn = turnPower * sin; // dikali cos biar seiring waktu spline robot maju nya makin kenceng
 
@@ -464,6 +475,7 @@ public class Config {
         return straightTo(inches, sHeading);
     }
 
+
     public boolean resetAndTurnTo(double turnDegree) {
         leftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -490,6 +502,5 @@ public class Config {
         if (leftBackMotor != null) leftBackMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         if (rightBackMotor != null) rightBackMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
-
-
 }
+
