@@ -1,8 +1,6 @@
 package org.firstinspires.ftc.teamcode.AdvanceCode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.roadrunner.Pose2d;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -12,17 +10,13 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.TankDrive;
 
 @com.acmerobotics.dashboard.config.Config
 public class Config {
     //    Import Components
     FtcDashboard ftcDashboard = FtcDashboard.getInstance();
     PIDFCoefficients pidfCoefficients;
-    GoBildaPinpointDriver pinPoint;
     HeadingPIDController armPID;
     HeadingPIDController straightPID;
     HeadingPIDController turnPID;
@@ -50,8 +44,8 @@ public class Config {
     public static double sKD = 0;
     public static double sKF = 200;
     //    Drive Constants
-    final double WHEEL_DIAMETER_INCHES = 90 / 25.4;
-    public static double TICKS_PER_REV = 118.09090909091;
+    final double WHEEL_DIAMETER_INCHES = 96.0 / 25.4;
+    public static double TICKS_PER_REV = 537.6898395722; // Inch per revolution drivebase moto r
     final double INCHES_PER_TICKS = (Math.PI * WHEEL_DIAMETER_INCHES) / TICKS_PER_REV;
 
     final double SPLINE_TOLERANCE_INCHES = 2.0;
@@ -63,7 +57,7 @@ public class Config {
     final double MAX_TURN_POWER = 0.35;
     final double MIN_TURN_POWER = 0.05;
     //    Jarak antara roda kanan & Kiri
-    final double TRACK_WIDTH_INCHES = 13.0;
+    final double TRACK_WIDTH_INCHES = 14.0;
     // SubSystem Config
     DcMotorEx armMotor = null;
     public static double aKP = 0;
@@ -72,7 +66,6 @@ public class Config {
     public static double aKF = 0;
     public static double ticks = 28.0 * 40.0 / 3.0; // Ticks formula (Ticks(28) * Internal ratio * external ratio))
 
-    boolean pinpointAvailable = false;
 
     //    Shooter
 
@@ -100,9 +93,6 @@ public class Config {
     boolean useMecanum, useTankDrive;
     boolean useArm, useShoot, useIntake;
 
-    private double straightStartX = 0, straightStartY = 0;
-    private double strafeStartX = 0, strafeStartY = 0;
-    private double splineStartX = 0, splineStartY = 0;
 
     public void initialize(HardwareMap hardwareMap, boolean useTankDrive, boolean useArm, boolean useShoot, boolean useIntake) {
         this.useTankDrive = useTankDrive;
@@ -119,8 +109,8 @@ public class Config {
             leftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-            leftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-            rightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+            leftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+            rightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
             leftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             rightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -237,7 +227,12 @@ public class Config {
         }
         double error = inches - currentInches;
 
-//        ini kalau error udah kurang dari 3inches di stop tuh motor nya
+        double drivePower = straightPID.calculateInches(inches, currentInches);
+//        klo drivepower nya - di abs sama absDrive jadi nya gk ada - nah terus math.signum tuh tugasnya buat ngembaliin tanda di Min nya jadi bakal -6, 1
+//        klo gk pake signum ntr clip hasilnya malah 0.6 bukan - 0.6 jadi yang harusnya mundur malah maju.
+        drivePower = Range.clip(drivePower, -MAX_DRIVE_POWER, MAX_DRIVE_POWER);
+
+        //        ini kalau error udah kurang dari 3inches di stop tuh motor nya
         if (Math.abs(error) < STRAIGHT_TOLERANCE_INCHES) {
             leftMotor.setPower(0);
             rightMotor.setPower(0);
@@ -247,11 +242,6 @@ public class Config {
             turnPID = null;
             return true;
         }
-        double drivePower = straightPID.calculateInches(inches, currentInches);
-//        klo drivepower nya - di abs sama absDrive jadi nya gk ada - nah terus math.signum tuh tugasnya buat ngembaliin tanda di Min nya jadi bakal -6, 1
-//        klo gk pake signum ntr clip hasilnya malah 0.6 bukan - 0.6 jadi yang harusnya mundur malah maju.
-        double absDrive = Range.clip(Math.abs(drivePower), MIN_DRIVE_POWER, MAX_DRIVE_POWER);
-        drivePower = absDrive * Math.signum(drivePower);
 
 //        Biar tetep lurus dan gk belok miring atau gmn lah misal ntr ditabrak
 //        tpi tetep bisa ke degree 0 biar gk salah jalur
@@ -328,8 +318,7 @@ public class Config {
             return true;
         }
         double drivePower = strafePID.calculateInches(strafeInches, currentInches);
-        double absPower = Range.clip(Math.abs(drivePower), MIN_DRIVE_POWER, MAX_DRIVE_POWER);
-        drivePower = absPower * Math.signum(drivePower);
+        drivePower = Range.clip(drivePower, -MAX_DRIVE_POWER, MAX_DRIVE_POWER);
 
         leftMotor.setPower(drivePower);
         leftBackMotor.setPower(-drivePower);
@@ -382,8 +371,7 @@ public class Config {
 //        disini cos nya untuk kenceng diawal berarti straight, dan sin untuk kenceng diakhir yang membuat curve spline yang smooth;
 
         double splinePower = splinePID.calculateInches(splineInches, currentInches);
-        double absPower = Range.clip(Math.abs(splinePower), MIN_DRIVE_POWER, MAX_DRIVE_POWER);
-        splinePower = absPower * Math.signum(splinePower);
+        splinePower = Range.clip(splinePower, -MAX_DRIVE_POWER, MAX_DRIVE_POWER);
 
         double targetHeading = Progress * headingRadians;
 
