@@ -5,6 +5,7 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
@@ -70,10 +71,8 @@ public class Config {
     //    Shooter
 
     DcMotorEx Shooter = null;
-    boolean allowShoot = false;
     //    Intake
     DcMotorEx Intake = null;
-    boolean allowIntake = false;
 
     //    IMU
     IMU imu;
@@ -182,22 +181,14 @@ public class Config {
 
     public boolean Shooter(double targetVel) {
         if (!useShoot || Shooter == null) return true;
-        if (allowShoot) {
-            Shooter.setVelocity(targetVel);
-        } else {
-            Shooter.setVelocity(0);
-        }
+        Shooter.setVelocity(targetVel);
 
         return false;
     }
 
     public boolean Intake(double targetTicks) {
         if (!useIntake || Intake == null) return true;
-        if (allowIntake) {
-            Intake.setVelocity(targetTicks * 60);
-        } else {
-            Intake.setVelocity(0);
-        }
+        Intake.setVelocity(targetTicks * 60);
         return false;
     }
 
@@ -489,6 +480,12 @@ public class Config {
         rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         if (leftBackMotor != null) leftBackMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         if (rightBackMotor != null) rightBackMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    // TELEOP CONFIG
+    public void tankMotors(double leftPower, double rightPower) {
+        leftMotor.setPower(leftPower);
+        rightMotor.setPower(rightPower);
     }
 }
 

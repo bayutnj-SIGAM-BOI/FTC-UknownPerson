@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.AdvanceCode;
 
 import android.util.Size;
 
@@ -41,8 +41,9 @@ public class AprilTagWebcam {
 
         // Configure AprilTag processor with optimized settings
         aprilTagProcessor = new AprilTagProcessor.Builder()
-                .setOutputUnits(DistanceUnit.CM, AngleUnit.DEGREES)
-                .setNumThreads(1)  // Single thread for efficiency
+                .setLensIntrinsics(1443.28, 1443.28, 927.968, 566.107)
+                .setOutputUnits(DistanceUnit.INCH, AngleUnit.RADIANS)
+                .setNumThreads(1)
                 .build();
 
         // Build vision portal with webcam

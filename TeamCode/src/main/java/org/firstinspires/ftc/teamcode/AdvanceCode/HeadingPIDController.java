@@ -1,10 +1,21 @@
 package org.firstinspires.ftc.teamcode.AdvanceCode;
 
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+
 public class HeadingPIDController {
     private double kP, kI, kD;
-    private double integralSum = 0;
-    private double lastError = 0;
+    private double integralSumInches = 0;
+    private double integralSumDegree = 0;
+    private double integralSumRadians = 0;
+
+    private double lastErrorDegree = 0;
+    private double lastErrorRadians = 0;
+    private double lastErrorInch = 0;
     private double integralLimit = 30; // cegah integral windup
+    private ElapsedTime RadiansTimer = new ElapsedTime();
+    private ElapsedTime degreeTimer = new ElapsedTime();
+    private ElapsedTime inchTimer = new ElapsedTime();
 
     public HeadingPIDController(double kP, double kI, double kD) {
         this.kP = kP;
@@ -15,17 +26,17 @@ public class HeadingPIDController {
     public double calculateInches(double target, double current) {
         double error = target - current;
 
-        if (Math.abs(error) < 3.0) {
-            integralSum += error;
+        if (Math.abs(error) > 3.0) {
+            integralSumInches += error * inchTimer.seconds();
         } else {
-            integralSum = 0;
+            integralSumInches = 0;
         }
-        integralSum = Math.max(-integralLimit, Math.min(integralLimit, integralSum));
+        integralSumInches = Range.clip(integralSumInches, -integralLimit, integralLimit);
 
-        double derivative = error - lastError;
-        lastError = error;
+        double derivative = error - lastErrorInch;
+        lastErrorInch = error;
 
-        double output = (error * kP) + (integralSum * kI) + (derivative * kD);
+        double output = (error * kP) + (integralSumInches * kI) + (derivative * kD);
         return output;
     }
 
@@ -34,18 +45,19 @@ public class HeadingPIDController {
         double error = angleWrapRadians(targetHeading - currentHeading);
 
 //        Integral = Disappear Error Kecil
-        if (Math.abs(error) < 0.1) {
-            integralSum += error;
+        if (Math.abs(error) > 0.1) {
+            integralSumRadians += error * RadiansTimer.seconds();
         } else {
-            integralSum = 0;
+            integralSumRadians = 0;
         }
-        integralSum = Math.max(-integralLimit, Math.min(integralLimit, integralSum));
+        integralSumRadians = Range.clip(integralSumInches, -integralLimit, integralLimit);
+
 
 //        Derivative = biar gk terlalu kenceng
-        double derivative = error - lastError;
-        lastError = error;
+        double derivative = error - lastErrorRadians;
+        lastErrorRadians = error;
 
-        double output = (error * kP) + (integralSum * kI) + (derivative * kD);
+        double output = (error * kP) + (integralSumRadians * kI) + (derivative * kD);
         return output;
     }
 
@@ -53,18 +65,18 @@ public class HeadingPIDController {
         double error = angleWrapDegree(targetHeading - currentHeading);
 
 //        Integral = Disappear Error Kecil
-        if (Math.abs(error) < 10.0) {
-            integralSum += error;
+        if (Math.abs(error) > 10.0) {
+            integralSumDegree += error * degreeTimer.seconds();
         } else {
-            integralSum = 0;
+            integralSumDegree = 0;
         }
-        integralSum = Math.max(-integralLimit, Math.min(integralLimit, integralSum));
+        integralSumDegree = Range.clip(integralSumDegree, -integralLimit, integralLimit);
 
 //        Derivative = biar gk terlalu kenceng
-        double derivative = error - lastError;
-        lastError = error;
+        double derivative = error - lastErrorDegree;
+        lastErrorDegree = error;
 
-        double output = (error * kP) + (integralSum * kI) + (derivative * kD);
+        double output = (error * kP) + (integralSumDegree * kI) + (derivative * kD);
         return output;
     }
 
@@ -89,7 +101,11 @@ public class HeadingPIDController {
     }
 
     public void reset() {
-        integralSum = 0;
-        lastError = 0;
+        integralSumInches = 0;
+        integralSumDegree = 0;
+        integralSumRadians = 0;
+        lastErrorDegree = 0;
+        lastErrorInch = 0;
+        lastErrorRadians = 0;
     }
 }
