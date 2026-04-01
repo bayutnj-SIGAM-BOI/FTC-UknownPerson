@@ -16,13 +16,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 @com.acmerobotics.dashboard.config.Config
 public class Config {
     //    Import Components
-    FtcDashboard ftcDashboard = FtcDashboard.getInstance();
-    PIDFCoefficients pidfCoefficients;
-    HeadingPIDController armPID;
-    HeadingPIDController straightPID;
-    HeadingPIDController turnPID;
-    HeadingPIDController strafePID;
-    HeadingPIDController splinePID;
+    private FtcDashboard ftcDashboard = FtcDashboard.getInstance();
+    private PIDFCoefficients pidfCoefficients;
+    private HeadingPIDController armPID;
+    private HeadingPIDController straightPID;
+    private HeadingPIDController turnPID;
+    private HeadingPIDController strafePID;
+    private HeadingPIDController splinePID;
     //    Drive base Config
     DcMotor leftMotor, rightMotor = null;
     DcMotor leftBackMotor, rightBackMotor = null;
@@ -49,16 +49,16 @@ public class Config {
     public static double TICKS_PER_REV = 537.6898395722; // Inch per revolution drivebase moto r
     final double INCHES_PER_TICKS = (Math.PI * WHEEL_DIAMETER_INCHES) / TICKS_PER_REV;
 
-    final double SPLINE_TOLERANCE_INCHES = 2.0;
-    final double STRAFE_TOLERANCE_INCHES = 2.0;
-    final double STRAIGHT_TOLERANCE_INCHES = 3.0;
-    final double TURN_TOLERANCE_DEGREE = 1.5;
-    final double MAX_DRIVE_POWER = 0.4;
-    final double MIN_DRIVE_POWER = 0.3;
-    final double MAX_TURN_POWER = 0.35;
-    final double MIN_TURN_POWER = 0.05;
+    private final double SPLINE_TOLERANCE_INCHES = 2.0;
+    private final double STRAFE_TOLERANCE_INCHES = 2.0;
+    private final double STRAIGHT_TOLERANCE_INCHES = 3.0;
+    private final double TURN_TOLERANCE_DEGREE = 1.5;
+    private final double MAX_DRIVE_POWER = 0.4;
+    private final double MIN_DRIVE_POWER = 0.3;
+    private final double MAX_TURN_POWER = 0.35;
+    private final double MIN_TURN_POWER = 0.05;
     //    Jarak antara roda kanan & Kiri
-    final double TRACK_WIDTH_INCHES = 14.0;
+    private final double TRACK_WIDTH_INCHES = 14.0;
     // SubSystem Config
     DcMotorEx armMotor = null;
     public static double aKP = 0;
@@ -75,8 +75,8 @@ public class Config {
     DcMotorEx Intake = null;
 
     //    IMU
-    IMU imu;
-    boolean IMUAvailable = false;
+    private IMU imu;
+    private boolean IMUAvailable = true;
 
     //    State
     enum State {
@@ -480,6 +480,12 @@ public class Config {
         rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         if (leftBackMotor != null) leftBackMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         if (rightBackMotor != null) rightBackMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        if (Shooter != null) Shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        if (Shooter != null) Shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        if (Intake != null) Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        if (Intake != null) Intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
     // TELEOP CONFIG

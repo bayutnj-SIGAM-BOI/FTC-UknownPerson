@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 @Config
 public class AprilTagWebcam {
-    private AprilTagProcessor aprilTagProcessor;  // Made private and fixed assignment
+    private AprilTagProcessor aprilTagProcessor;
     private VisionPortal visionPortal;
 
     private List<AprilTagDetection> detectedTag = new ArrayList<>();
@@ -30,12 +30,6 @@ public class AprilTagWebcam {
     public static int exposure = 4;
     public static int gain = 230;
 
-    /**
-     * Initialize the AprilTag detection system
-     *
-     * @param hardwareMap Robot hardware map
-     * @param telemetry   Telemetry for status updates
-     */
     public void init(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
 
@@ -62,14 +56,6 @@ public class AprilTagWebcam {
         telemetry.update();
     }
 
-    /**
-     * Set manual camera exposure and gain for consistent AprilTag detection
-     * Lower exposure = less motion blur but needs more light
-     * Higher gain = brighter image but more noise
-     *
-     * @param exposureMs Exposure time in milliseconds (recommended: 4-8)
-     * @param gain       Camera gain (recommended: 200-250)
-     */
     private void setManualExposure(int exposureMs, int gain) {
         // Wait for camera to be ready
         if (visionPortal == null || visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
@@ -115,21 +101,12 @@ public class AprilTagWebcam {
         }
     }
 
-    /**
-     * Update the list of detected AprilTags
-     * Call this in your OpMode loop before accessing detection data
-     */
     public void update() {
         if (aprilTagProcessor != null) {
             detectedTag = aprilTagProcessor.getDetections();
         }
     }
 
-    /**
-     * Get all currently detected AprilTags
-     *
-     * @return List of detected tags
-     */
     public List<AprilTagDetection> getDetectedTag() {
         return detectedTag;
     }
@@ -144,11 +121,6 @@ public class AprilTagWebcam {
         return null;
     }
 
-    /**
-     * Display detailed telemetry for a detected AprilTag
-     *
-     * @param detection AprilTag detection to display
-     */
     public void displayDetectionTelemetry(AprilTagDetection detection) {
         if (detection == null) {
             return;
@@ -169,9 +141,6 @@ public class AprilTagWebcam {
         }
     }
 
-    /**
-     * @return
-     */
     public int getDetectedTagCount() {
         return detectedTag.size();
     }

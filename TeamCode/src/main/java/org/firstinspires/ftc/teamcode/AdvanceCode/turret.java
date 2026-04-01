@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.AdvanceCode;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
+
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
 
 import com.acmerobotics.dashboard.config.Config;
@@ -9,7 +10,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -21,6 +21,7 @@ public class turret {
 
     DcMotorEx spinTurret, turretWheel;
     Servo angleAdjuster, Stooper;
+    VoltageSensor myVoltageSensor;
 
     public static double turretWheelP = 0;
     public static double turretWheelI = 0;
@@ -51,6 +52,9 @@ public class turret {
 
         angleAdjuster = hardwareMap.get(Servo.class, "angleAdjuster");
         Stooper = hardwareMap.get(Servo.class, "Stooper");
+
+//        myVoltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
+        myVoltageSensor = hardwareMap.voltageSensor.iterator().next();
     }
 
     public AprilTagDetection setWebcam() {
@@ -67,14 +71,38 @@ public class turret {
         return isTargetFound;
     }
 
-    public void setVelocityAuto() {
+    public void setVelocityAuto(boolean active) {
         webcam.update();
         AprilTagDetection target = setWebcam();
 
         if (target == null) return;
 
+        double batteryVoltage = myVoltageSensor.getVoltage();
         double vel = calculateLauncherPower(target.ftcPose.range);
-        turretWheel.setVelocity(vel);
+        double compiledPower = batteryCompiled(vel, batteryVoltage);
+        if (active) {
+            turretWheel.setVelocity(compiledPower);
+        } else {
+            turretWheel.setVelocity(0);
+        }
+    }
+
+    public double batteryCompiled(double basePower, double volt) {
+        double compensatedPower = basePower;
+//        battery threshold
+//        semakin rendah voltage kompensasinya lebih gede
+        if (volt < 12.3) {
+            double voltageDrop = 13.0 - volt;
+            double compensation = 1.0 + (voltageDrop * 0.05);
+
+            compensatedPower = basePower * compensation;
+        }
+
+        if (compensatedPower < 0) compensatedPower = 0;
+        if (compensatedPower > 3000) compensatedPower = 3000;
+
+        return compensatedPower;
+
     }
 
     private double calculateLauncherPower(double distance) {

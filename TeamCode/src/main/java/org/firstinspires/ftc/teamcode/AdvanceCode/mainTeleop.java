@@ -28,24 +28,23 @@ public class mainTeleop extends OpMode {
         turret.spinningTurret();
 
         if (gamepad1.right_trigger > 0.5) {
-            turret.setVelocityAuto();
+            turret.setVelocityAuto(true);
         }
 
         if (gamepad1.a && !lastA) {
             stooperOpen = !stooperOpen;
-            turret.setStooperOpen();
-        } else if (!gamepad1.a) {
-            turret.setStooperClose();
+            if (stooperOpen) turret.setStooperOpen();
+            else turret.setStooperClose();
         }
         lastA = gamepad1.a;
 
         if (gamepad1.y && !lastY) {
             ShooterOn = !ShooterOn;
-            r.Shooter(1800);
-        } else if (!gamepad1.y) {
-            r.Shooter(0);
+            if (ShooterOn) r.Shooter(1800);
+            else r.Shooter(0);
         }
         lastY = gamepad1.y;
+
         if (gamepad1.left_trigger > 0.3) {
             r.Intake(1800);
         } else {
