@@ -16,20 +16,26 @@ public class mainTeleop extends OpMode {
 
     @Override
     public void init() {
-        r.initialize(hardwareMap, true, false, true, true);
-        turret.initalize(hardwareMap);
+        r.initialize(hardwareMap, true, false, false, true);
+        turret.initalize(hardwareMap, telemetry);
+        turret.spinTimer.reset();
+
     }
 
     @Override
     public void loop() {
         Movement();
-
+        turret.updateWebcam();
         turret.setAngleAdjuster();
         turret.spinningTurret();
 
-        if (gamepad1.right_trigger > 0.5) {
-            turret.setVelocityAuto(true);
+
+        if (gamepad1.y && !lastY) {
+            ShooterOn = !ShooterOn;
+            if (ShooterOn) turret.setVelocityAuto();
+            else turret.turretWheel.setVelocity(0);
         }
+        lastY = gamepad1.y;
 
         if (gamepad1.a && !lastA) {
             stooperOpen = !stooperOpen;
@@ -38,28 +44,32 @@ public class mainTeleop extends OpMode {
         }
         lastA = gamepad1.a;
 
-        if (gamepad1.y && !lastY) {
-            ShooterOn = !ShooterOn;
-            if (ShooterOn) r.Shooter(1800);
-            else r.Shooter(0);
-        }
-        lastY = gamepad1.y;
-
-        if (gamepad1.left_trigger > 0.3) {
-            r.Intake(1800);
+        if (gamepad1.left_bumper) {
+            r.Intake(1.0);
         } else {
             r.Intake(0);
         }
 
+        telemetry.addData("Angle", turret.angle);
+        telemetry.addData("Range", turret.range);
+        telemetry.addData("Velocity", turret.vel);
+        telemetry.addData("Bearing", turret.bearing);
+        telemetry.addData("Power Compiled", turret.compiledPower);
+        telemetry.update();
     }
 
     public void Movement() {
-        double forward = -gamepad1.left_stick_y;
-        double rotate = gamepad1.right_stick_x;
+        double y = -gamepad1.left_stick_y;
+        double x = -gamepad1.right_stick_x;
 
-        double leftPower = Range.clip(forward - rotate, -1.0, 1.0);
-        double rightPower = Range.clip(forward + rotate, -1.0, 1.0);
+        double leftPower = Range.clip(y - x, -1.0, 1.0);
+        double rightPower = Range.clip(y + x, -1.0, 1.0);
 
         r.tankMotors(leftPower, rightPower);
+    }
+
+    @Override
+    public void stop() {
+        turret.stop();
     }
 }

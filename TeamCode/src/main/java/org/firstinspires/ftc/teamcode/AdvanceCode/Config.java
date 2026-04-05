@@ -108,8 +108,8 @@ public class Config {
             leftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-            leftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-            rightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+            leftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+            rightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
             leftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             rightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -140,7 +140,7 @@ public class Config {
 
         imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters imuParams = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
                 RevHubOrientationOnRobot.UsbFacingDirection.LEFT));
         imu.initialize(imuParams);
         imu.resetYaw();
@@ -176,20 +176,17 @@ public class Config {
         double angleRad = Math.toRadians(targetDegree);
         double feedforward = Math.cos(angleRad) * aKF; // ini menghasilkan  kencang diawal tpi semakin dekat dengan target dia makin pelan
         double power = pid + feedforward;
-        armMotor.setVelocity(power * 60);
+        armMotor.setVelocity(power);
     }
 
-    public boolean Shooter(double targetVel) {
-        if (!useShoot || Shooter == null) return true;
+    public void Shooter(double targetVel) {
+        if (!useShoot || Shooter == null) return;
         Shooter.setVelocity(targetVel);
-
-        return false;
     }
 
-    public boolean Intake(double targetTicks) {
-        if (!useIntake || Intake == null) return true;
-        Intake.setVelocity(targetTicks * 60);
-        return false;
+    public void Intake(double targetPower) {
+        if (!useIntake || Intake == null) return;
+        Intake.setPower(targetPower);
     }
 
     public boolean straightTo(double inches, double heading) {
@@ -197,8 +194,14 @@ public class Config {
         if (!hasDrive) return true;
 
         if (straightPID == null) straightPID = new HeadingPIDController(dKP, dKI, dKD);
+        straightPID.kP = dKP;
+        straightPID.kI = dKI;
+        straightPID.kD = dKP;
 
         if (turnPID == null) turnPID = new HeadingPIDController(tKP, tKI, tKD);
+        turnPID.kP = tKP;
+        turnPID.kI = tKI;
+        turnPID.kD = tKD;
 
 
         double currentInches;
@@ -260,6 +263,9 @@ public class Config {
 
     public boolean turnTo(double targetDegrees) {
         if (turnPID == null) turnPID = new HeadingPIDController(tKP, tKI, tKD);
+        turnPID.kP = tKP;
+        turnPID.kI = tKI;
+        turnPID.kD = tKD;
 
         double currentHeading = getHeading();
         double error = turnPID.angleWrapDegree(targetDegrees - currentHeading);
@@ -290,6 +296,9 @@ public class Config {
 
     public boolean strafeTo(double strafeInches) {
         if (strafePID == null) strafePID = new HeadingPIDController(strP, strI, strD);
+        strafePID.kP = strP;
+        strafePID.kI = strI;
+        strafePID.kD = strD;
 
         double leftInches = leftMotor.getCurrentPosition() * INCHES_PER_TICKS;
         double leftBackInches = leftBackMotor.getCurrentPosition() * INCHES_PER_TICKS;
@@ -323,7 +332,13 @@ public class Config {
     // spline lurus  lalu belok curve sampai headingnya; pakai cos & sin untuk curve nya;
     public boolean splineTo(double splineInches, double headingRadians, double curveFactor, double tangent) {
         if (splinePID == null) splinePID = new HeadingPIDController(dKP, dKI, dKD);
+        splinePID.kP = dKP;
+        splinePID.kI = dKI;
+        splinePID.kD = dKD;
         if (turnPID == null) turnPID = new HeadingPIDController(tKP, tKI, tKD);
+        turnPID.kP = tKP;
+        turnPID.kI = tKI;
+        turnPID.kD = tKD;
 
 
         double leftInches = leftMotor.getCurrentPosition() * INCHES_PER_TICKS;
@@ -349,7 +364,7 @@ public class Config {
         }
 
 //        progress 0 -> 1;
-        double Progress = Math.min(Math.max(currentInches / splineInches, 0.0), 1.0);
+        double Progress = Range.clip(currentInches / splineInches, 0.0, 1.0);
 //        * curveFactor biar ntr bisa makin tajem atau pu nenggak
         double angle = Math.min(Progress * (Math.PI / 2.0) * curveFactor, Math.PI / 2.0);
 //        Tanh tuh mempersmoothhh aja
@@ -358,7 +373,7 @@ public class Config {
         double cos = Math.cos(theta * Math.PI / 2); // Math.cos disin waktu diawal kenceng tpi diakhir makin pelan
 //        sin untuk curve
 //        sin dari nilai 0.0 -> 1.0
-        double sin = Math.sin(theta * Math.PI / 2); // Math.sin disini untuk biar power curve nya itu kecil tpi pas mau akhiran kenceng;
+        double sin = Math.sin(theta * Math.PI / 2); // Math.sin disini untuk biar power straight nya itu kecil tpi pas mau akhiran kenceng;
 //        disini cos nya untuk kenceng diawal berarti straight, dan sin untuk kenceng diakhir yang membuat curve spline yang smooth;
 
         double splinePower = splinePID.calculateInches(splineInches, currentInches);

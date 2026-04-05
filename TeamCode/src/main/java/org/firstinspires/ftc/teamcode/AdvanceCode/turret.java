@@ -1,8 +1,9 @@
 package org.firstinspires.ftc.teamcode.AdvanceCode;
 
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -20,71 +21,99 @@ public class turret {
     AprilTagWebcam webcam = new AprilTagWebcam();
 
     DcMotorEx spinTurret, turretWheel;
+    org.firstinspires.ftc.teamcode.AdvanceCode.Config r = new org.firstinspires.ftc.teamcode.AdvanceCode.Config();
     Servo angleAdjuster, Stooper;
     VoltageSensor myVoltageSensor;
+    private Telemetry telemetry;
 
-    public static double turretWheelP = 0;
+    public double angle = 0.0;
+    public double compiledPower = 0.0;
+    public double range = 0.0;
+    public double vel = 0.0;
+
+    public static double turretWheelP = 8.0;
     public static double turretWheelI = 0;
-    public static double turretWheelD = 0;
-    public static double turretWheelF = 0;
+    public static double turretWheelD = 0.5;
+    public static double turretWheelF = 12.5;
 
-    public static double spinnTurretP = 0;
-    public static double spinnTurretI = 0;
-    public static double spinnTurretD = 0;
+    public static double spinTurretP = 0;
+    public static double spinTurretI = 0;
+    public static double spinTurretD = 0;
 
+    public static double nearAngle = 0.5;
+    public static double farAngle = 0.0;
     private double integralSum = 0;
     private double lastError = 0;
-    private double integralLimit = 30.0;
-    private double goalX = 0;
-    private double angleTolerance = 0.4;
-    private ElapsedTime spinTimer = new ElapsedTime();
+    private double integralLimit = 15.0;
+    private double goalX = 0.0;
+    private double angleTolerance = 5;
+    public AprilTagDetection bearing;
+    public ElapsedTime spinTimer = new ElapsedTime();
 
-    public void initalize(HardwareMap hardwareMap) {
+    private double ticks_per_rev = 1425.1;
+    private double gearRatio = 5.0;
+    private double Limit = 85;
+    private double ticksPerDegree = (ticks_per_rev * gearRatio) / 360.0;
+    private double softLimitTicks = Limit * ticksPerDegree;
+    private int encoderOffset = 0;
+
+    public void initalize(HardwareMap hardwareMap, Telemetry telemetry) {
+        this.telemetry = telemetry;
         webcam.init(hardwareMap, telemetry);
 
         turretWheel = hardwareMap.get(DcMotorEx.class, "turretWheel");
+        turretWheel.setDirection(DcMotorSimple.Direction.FORWARD); // FORWARD
         turretWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(turretWheelP, turretWheelI, turretWheelD, turretWheelF);
         turretWheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
         spinTurret = hardwareMap.get(DcMotorEx.class, "spinTurret");
-        spinTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        spinTurret.setDirection(DcMotorSimple.Direction.REVERSE);
+        spinTurret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         angleAdjuster = hardwareMap.get(Servo.class, "angleAdjuster");
+        angleAdjuster.setPosition(0.8);
         Stooper = hardwareMap.get(Servo.class, "Stooper");
 
 //        myVoltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
         myVoltageSensor = hardwareMap.voltageSensor.iterator().next();
     }
 
+    public void manualTurret(double gpad) {
+        double power = Range.clip(gpad, -1, 1);
+        spinTurret.setPower(power);
+    }
+
+    public void updateWebcam() {
+        webcam.update();
+    }
+
     public AprilTagDetection setWebcam() {
         AprilTagDetection id20 = webcam.getTagBySpesificId(20);
-        AprilTagDetection id21 = webcam.getTagBySpesificId(21);
+        AprilTagDetection id24 = webcam.getTagBySpesificId(24);
 
         AprilTagDetection isTargetFound = null;
 
         if (id20 != null) {
             isTargetFound = id20;
-        } else if (id21 != null) {
-            isTargetFound = id21;
+        } else if (id24 != null) {
+            isTargetFound = id24;
         }
         return isTargetFound;
     }
 
-    public void setVelocityAuto(boolean active) {
-        webcam.update();
+    public void setVelocityAuto() {
         AprilTagDetection target = setWebcam();
 
-        if (target == null) return;
+        if (target == null) {
+            r.Shooter(1500);
+            return;
+        }
 
         double batteryVoltage = myVoltageSensor.getVoltage();
-        double vel = calculateLauncherPower(target.ftcPose.range);
-        double compiledPower = batteryCompiled(vel, batteryVoltage);
-        if (active) {
-            turretWheel.setVelocity(compiledPower);
-        } else {
-            turretWheel.setVelocity(0);
-        }
+        vel = calculateLauncherPower(target.ftcPose.range);
+        compiledPower = batteryCompiled(this.vel, batteryVoltage);
+        turretWheel.setVelocity(this.compiledPower);
     }
 
     public double batteryCompiled(double basePower, double volt) {
@@ -107,9 +136,10 @@ public class turret {
 
     private double calculateLauncherPower(double distance) {
         double[][] dataPoints = {
-                {72, 1450},
-                {108, 1550},
-                {144, 1800},
+                {130, 1450},
+                {140, 1550},
+                {150, 1800},
+                {160, 1900}
         };
 
         if (distance <= dataPoints[0][0]) {
@@ -139,61 +169,75 @@ public class turret {
     }
 
     public void setStooperOpen() {
-        Stooper.setPosition(0.0);
+        Stooper.setPosition(0.87);
     }
 
     public void setStooperClose() {
-        Stooper.setPosition(1.0);
+        Stooper.setPosition(0.6);
     }
 
     public void setAngleAdjuster() {
-        webcam.update();
 
         AprilTagDetection isTargetFound = setWebcam();
 
-        int nearSide = 72;
-        int farSide = 144;
-        double angle;
+        int nearSide = 130;
+        int farSide = 170;
 
-        if (isTargetFound != null) {
-            if (isTargetFound.ftcPose.range < nearSide) {
-                angle = 0.5;
-            } else if (isTargetFound.ftcPose.range > farSide) {
-                angle = 0.1;
-            } else {
-//                biar jika ditengah jarak kisaran 72-144
-                double t = (isTargetFound.ftcPose.range - nearSide) / (farSide - nearSide);
-                angle = 0.5 - (0.4 * t);
-            }
-            angleAdjuster.setPosition(angle);
+        if (isTargetFound == null) {
+            angleAdjuster.setPosition(0.8);
+            return;
         }
+
+        if (isTargetFound.ftcPose.range < nearSide) {
+            this.angle = nearAngle;
+        } else if (isTargetFound.ftcPose.range > farSide) {
+            this.angle = farAngle;
+        } else {
+//          biar jika ditengah jarak kisaran 72-144
+            double t = (isTargetFound.ftcPose.range - nearSide) / (farSide - nearSide);
+            this.angle = nearAngle + (farAngle - nearAngle) * t;
+        }
+        angleAdjuster.setPosition(this.angle);
+
     }
 
     public void spinningTurret() {
-        webcam.update();
 
-        AprilTagDetection target = setWebcam();
+        this.bearing = setWebcam();
 
-        double power = 0.0;
-        if (target != null) {
-            double error = angleRadians(goalX - target.ftcPose.bearing);
-
-            if (Math.abs(error) < angleTolerance) {
-                integralSum = 0;
-                lastError = 0;
-                spinTurret.setPower(0);
-                return;
-            }
-
-            double pidOutput = calculatePID(goalX, target.ftcPose.bearing);
-
-            power = Range.clip(pidOutput, -0.2, 0.2);
+        if (bearing == null) {
+            spinTurret.setPower(0);
+            integralSum = 0.0;
+            return;
         }
+
+        double error = angleRadians(goalX - bearing.ftcPose.bearing);
+
+        if (Math.abs(error) < angleTolerance) {
+            integralSum = 0;
+            lastError = 0;
+            spinTurret.setPower(0);
+            return;
+        }
+
+        double currentTicks = spinTurret.getCurrentPosition() - encoderOffset;
+        if (Math.abs(currentTicks) >= Limit && error < 0) {
+            spinTurret.setPower(0);
+            return;
+        }
+
+        if (Math.abs(currentTicks) >= Limit && error > 0) {
+            spinTurret.setPower(0);
+            return;
+        }
+
+        double power = Range.clip(calculatePID(error), -1.0, 1.0);
+
         spinTurret.setPower(power);
     }
 
-    private double calculatePID(double target, double currTarget) {
-        double error = angleRadians(target - currTarget);
+    private double calculatePID(double error) {
+        error = angleRadians(error);
 
         if (Math.abs(error) > angleTolerance) {
             integralSum += error * spinTimer.seconds();
@@ -207,17 +251,21 @@ public class turret {
 
         spinTimer.reset();
 
-        double output = (error * spinnTurretP) + (integralSum * spinnTurretI) + (derivative * spinnTurretD);
+        double output = (error * spinTurretP) + (integralSum * spinTurretI) + (derivative * spinTurretD);
         return output;
     }
 
-    public double angleRadians(double radians) {
-        while (radians > Math.PI) {
-            radians -= 2 * Math.PI;
+    public double angleRadians(double turretAngle) {
+        while (turretAngle > 180) {
+            turretAngle -= 360;
         }
-        while (radians < -Math.PI) {
-            radians += 2 * Math.PI;
+        while (turretAngle < -180) {
+            turretAngle += 360;
         }
-        return radians;
+        return turretAngle;
+    }
+
+    public void stop() {
+        webcam.stop();
     }
 }
