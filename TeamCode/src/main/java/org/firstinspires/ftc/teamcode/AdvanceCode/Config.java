@@ -23,7 +23,7 @@ public class Config {
     private HeadingPIDController turnPID;
     private HeadingPIDController strafePID;
     private HeadingPIDController splinePID;
-    //    Drive base Config
+    //    Drive base Configs
     DcMotor leftMotor, rightMotor = null;
     DcMotor leftBackMotor, rightBackMotor = null;
 
@@ -91,10 +91,13 @@ public class Config {
     //    use Systems
     boolean useMecanum, useTankDrive;
     boolean useArm, useShoot, useIntake;
+    boolean useImu;
 
 
-    public void initialize(HardwareMap hardwareMap, boolean useTankDrive, boolean useArm, boolean useShoot, boolean useIntake) {
+    public void initialize(HardwareMap hardwareMap, boolean useTankDrive, boolean useImu, boolean useArm, boolean useShoot, boolean useIntake) {
         this.useTankDrive = useTankDrive;
+
+        this.useImu = useImu;
 
         this.useArm = useArm;
         this.useShoot = useShoot;
@@ -138,12 +141,14 @@ public class Config {
             this.useTankDrive = false;
         }
 
-        imu = hardwareMap.get(IMU.class, "imu");
-        IMU.Parameters imuParams = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
-                RevHubOrientationOnRobot.UsbFacingDirection.LEFT));
-        imu.initialize(imuParams);
-        imu.resetYaw();
+        if (useImu) {
+            imu = hardwareMap.get(IMU.class, "imu");
+            IMU.Parameters imuParams = new IMU.Parameters(new RevHubOrientationOnRobot(
+                    RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
+                    RevHubOrientationOnRobot.UsbFacingDirection.LEFT));
+            imu.initialize(imuParams);
+            imu.resetYaw();
+        }
 
         // SubSystem initialize
         if (useArm) {

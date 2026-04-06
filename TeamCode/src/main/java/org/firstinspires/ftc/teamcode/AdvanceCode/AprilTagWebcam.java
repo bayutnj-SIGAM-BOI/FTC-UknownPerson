@@ -27,8 +27,8 @@ public class AprilTagWebcam {
     private List<AprilTagDetection> detectedTag = new ArrayList<>();
 
     private Telemetry telemetry;
-    public static int exposure = 4;
-    public static int gain = 60;
+    public static int exposure = 8;
+    public static int gain = 250;
 
     public void init(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;

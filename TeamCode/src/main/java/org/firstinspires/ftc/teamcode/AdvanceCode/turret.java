@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.AdvanceCode;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -14,48 +16,54 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 @Config
 public class turret {
+    org.firstinspires.ftc.teamcode.AdvanceCode.Config r = new org.firstinspires.ftc.teamcode.AdvanceCode.Config();
     AprilTagWebcam webcam = new AprilTagWebcam();
 
     DcMotorEx spinTurret, turretWheel;
-    org.firstinspires.ftc.teamcode.AdvanceCode.Config r = new org.firstinspires.ftc.teamcode.AdvanceCode.Config();
     Servo angleAdjuster, Stooper;
     VoltageSensor myVoltageSensor;
+    AprilTagDetection aprilTagDetection;
     private Telemetry telemetry;
 
+    //    Telemetry
     public double angle = 0.0;
     public double compiledPower = 0.0;
-    public double range = 0.0;
+    public AprilTagDetection range;
+    public AprilTagDetection bearing;
     public double vel = 0.0;
+    public double error = 0.0;
+    public double currentRobotYaw = 0.0;
+    public double currentTurretAngle = 0.0;
+
+//    Params Dashboard
 
     public static double turretWheelP = 8.0;
     public static double turretWheelI = 0;
     public static double turretWheelD = 0.5;
     public static double turretWheelF = 12.5;
 
-    public static double spinTurretP = 0;
+    public static double spinTurretP = 0.15;
     public static double spinTurretI = 0;
-    public static double spinTurretD = 0;
+    public static double spinTurretD = 0.2;
 
+    //    turret & Shooter variables
     public static double nearAngle = 0.5;
     public static double farAngle = 0.0;
     private double integralSum = 0;
     private double lastError = 0;
     private double integralLimit = 15.0;
     private double goalX = 0.0;
-    private double angleTolerance = 5;
-    public AprilTagDetection bearing;
+    private double angleTolerance = Math.toRadians(2);
     public ElapsedTime spinTimer = new ElapsedTime();
 
-    private double ticks_per_rev = 1425.1;
-    private double gearRatio = 5.0;
-    private double Limit = 85;
-    private double ticksPerDegree = (ticks_per_rev * gearRatio) / 360.0;
-    private double softLimitTicks = Limit * ticksPerDegree;
-    private int encoderOffset = 0;
+    IMU imu;
+    private double ticks_per_rev = 537.6898395722 * (100.0 / 20.0);
+    private double ticksToRad = (2 * Math.PI) / ticks_per_rev;
 
     public void initalize(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
@@ -69,7 +77,9 @@ public class turret {
 
         spinTurret = hardwareMap.get(DcMotorEx.class, "spinTurret");
         spinTurret.setDirection(DcMotorSimple.Direction.REVERSE);
+        spinTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         spinTurret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        spinTurret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         angleAdjuster = hardwareMap.get(Servo.class, "angleAdjuster");
         angleAdjuster.setPosition(0.8);
@@ -135,6 +145,7 @@ public class turret {
     }
 
     private double calculateLauncherPower(double distance) {
+//        Array pertama jarak dalam bentuk cm.
         double[][] dataPoints = {
                 {130, 1450},
                 {140, 1550},
@@ -177,7 +188,6 @@ public class turret {
     }
 
     public void setAngleAdjuster() {
-
         AprilTagDetection isTargetFound = setWebcam();
 
         int nearSide = 130;
@@ -197,13 +207,15 @@ public class turret {
             double t = (isTargetFound.ftcPose.range - nearSide) / (farSide - nearSide);
             this.angle = nearAngle + (farAngle - nearAngle) * t;
         }
+
         angleAdjuster.setPosition(this.angle);
 
     }
 
     public void spinningTurret() {
-
-        this.bearing = setWebcam();
+        bearing = setWebcam();
+        double power;
+        double error;
 
         if (bearing == null) {
             spinTurret.setPower(0);
@@ -211,7 +223,17 @@ public class turret {
             return;
         }
 
-        double error = angleRadians(goalX - bearing.ftcPose.bearing);
+        this.currentTurretAngle = spinTurret.getCurrentPosition() * ticksToRad;
+        double targetAngle;
+        if (bearing != null) {
+            targetAngle = angleRadians(Math.toRadians(goalX) - Math.toRadians(bearing.ftcPose.bearing));
+        } else {
+            this.currentRobotYaw = r.getHeading();
+            targetAngle = angleRadians(-currentRobotYaw);
+
+        }
+        error = angleRadians(targetAngle - currentTurretAngle);
+        this.error = error;
 
         if (Math.abs(error) < angleTolerance) {
             integralSum = 0;
@@ -220,47 +242,39 @@ public class turret {
             return;
         }
 
-        double currentTicks = spinTurret.getCurrentPosition() - encoderOffset;
-        if (Math.abs(currentTicks) >= Limit && error < 0) {
-            spinTurret.setPower(0);
-            return;
-        }
-
-        if (Math.abs(currentTicks) >= Limit && error > 0) {
-            spinTurret.setPower(0);
-            return;
-        }
-
-        double power = Range.clip(calculatePID(error), -1.0, 1.0);
+        power = Range.clip(calculatePID(error), -0.6, 0.6);
 
         spinTurret.setPower(power);
     }
 
     private double calculatePID(double error) {
+        double dt = spinTimer.seconds();
         error = angleRadians(error);
+        spinTimer.reset();
+
+        if (dt > 0.5) dt = 0.5;
+        if (dt <= 0) dt = 0.02;
 
         if (Math.abs(error) > angleTolerance) {
-            integralSum += error * spinTimer.seconds();
+            integralSum += error * dt;
         } else {
             integralSum = 0;
         }
         integralSum = Range.clip(integralSum, -integralLimit, integralLimit);
 
-        double derivative = (error - lastError) / spinTimer.seconds();
+        double derivative = (error - lastError) / dt;
         lastError = error;
-
-        spinTimer.reset();
 
         double output = (error * spinTurretP) + (integralSum * spinTurretI) + (derivative * spinTurretD);
         return output;
     }
 
     public double angleRadians(double turretAngle) {
-        while (turretAngle > 180) {
-            turretAngle -= 360;
+        while (turretAngle > Math.PI) {
+            turretAngle -= 2 * Math.PI;
         }
-        while (turretAngle < -180) {
-            turretAngle += 360;
+        while (turretAngle < -Math.PI) {
+            turretAngle += 2 * Math.PI;
         }
         return turretAngle;
     }
