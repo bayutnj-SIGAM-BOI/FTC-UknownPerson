@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.RoadRunnerMotions;
+package org.firstinspires.ftc.teamcode.Decode.Triangle.RoadRunnerMotions;
 
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
@@ -7,13 +7,11 @@ import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.robot.Robot;
 
-import org.firstinspires.ftc.teamcode.RoadRunnerMotions.RoadRunnerActions.Act;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RoadRunnerMotions.RoadRunnerActions.Act;
 import org.firstinspires.ftc.teamcode.TankDrive;
-import org.firstinspires.ftc.teamcode.Turret.RobotConstant;
-import org.firstinspires.ftc.teamcode.Turret.TurretWithPoseEstimate;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.Turret.TurretWithPoseEstimate;
 
 @Autonomous
 public class BlueAutonomous extends LinearOpMode {

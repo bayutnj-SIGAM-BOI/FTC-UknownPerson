@@ -1,6 +1,4 @@
-package org.firstinspires.ftc.teamcode.RoadRunnerMotions.RoadRunnerActions;
-
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+package org.firstinspires.ftc.teamcode.Decode.Triangle.RoadRunnerMotions.RoadRunnerActions;
 
 import androidx.annotation.NonNull;
 
@@ -8,16 +6,12 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.robot.Robot;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.AdvanceCode.turret;
-import org.firstinspires.ftc.teamcode.Turret.RobotConstant;
-import org.firstinspires.ftc.teamcode.Turret.TurretWithPoseEstimate;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
 
 public class Act {
     private final RobotConstant rc;

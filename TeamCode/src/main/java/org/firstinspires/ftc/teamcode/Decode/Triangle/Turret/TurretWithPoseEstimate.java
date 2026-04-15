@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Turret;
+package org.firstinspires.ftc.teamcode.Decode.Triangle.Turret;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
@@ -6,9 +6,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.robot.Robot;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
 
 @Config
 public class TurretWithPoseEstimate {

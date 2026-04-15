@@ -1,8 +1,4 @@
-package org.firstinspires.ftc.teamcode.Triangle;
-
-import com.qualcomm.robotcore.robot.Robot;
-
-import org.firstinspires.ftc.teamcode.Turret.RobotConstant;
+package org.firstinspires.ftc.teamcode.Decode.Triangle;
 
 public class ableToShootTriangle {
     public boolean InsideField(double robotX, double robotY) {
