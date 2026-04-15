@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.RoadRunnerMotions;
+package org.firstinspires.ftc.teamcode.Decode.Triangle.RoadRunnerMotions;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
@@ -7,16 +7,13 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.robot.Robot;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.TankDrive;
-import org.firstinspires.ftc.teamcode.Triangle.ableToShootTriangle;
-import org.firstinspires.ftc.teamcode.Turret.RobotConstant;
-import org.firstinspires.ftc.teamcode.Turret.TurretWithPoseEstimate;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.ableToShootTriangle;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.Turret.TurretWithPoseEstimate;
 
 @TeleOp
 
