@@ -4,17 +4,20 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @TeleOp
-public class turretMain extends OpMode {
-    turret turret = new turret();
+public class TeleopFullPreset extends OpMode {
 
     @Override
     public void init() {
-        turret.initalize(hardwareMap, telemetry);
+
     }
 
     @Override
     public void loop() {
-        turret.setAngleAdjuster();
-        turret.spinningTurret();
+
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
     }
 }

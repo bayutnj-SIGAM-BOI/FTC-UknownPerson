@@ -1,10 +1,11 @@
 package org.firstinspires.ftc.teamcode.AdvanceCode;
 
+import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 public class HeadingPIDController {
-    private double kP, kI, kD;
+    public double kP, kI, kD;
     private double integralSumInches = 0;
     private double integralSumDegree = 0;
     private double integralSumRadians = 0;
@@ -12,7 +13,7 @@ public class HeadingPIDController {
     private double lastErrorDegree = 0;
     private double lastErrorRadians = 0;
     private double lastErrorInch = 0;
-    private double integralLimit = 30; // cegah integral windup
+    private double integralLimit = 30; // integral windup
     private ElapsedTime RadiansTimer = new ElapsedTime();
     private ElapsedTime degreeTimer = new ElapsedTime();
     private ElapsedTime inchTimer = new ElapsedTime();
@@ -21,6 +22,12 @@ public class HeadingPIDController {
         this.kP = kP;
         this.kI = kI;
         this.kD = kD;
+
+        RadiansTimer.reset();
+
+        degreeTimer.reset();
+
+        inchTimer.reset();
     }
 
     public double calculateInches(double target, double current) {
@@ -33,8 +40,9 @@ public class HeadingPIDController {
         }
         integralSumInches = Range.clip(integralSumInches, -integralLimit, integralLimit);
 
-        double derivative = error - lastErrorInch;
+        double derivative = (error - lastErrorInch) / inchTimer.seconds();
         lastErrorInch = error;
+        inchTimer.reset();
 
         double output = (error * kP) + (integralSumInches * kI) + (derivative * kD);
         return output;
@@ -50,12 +58,13 @@ public class HeadingPIDController {
         } else {
             integralSumRadians = 0;
         }
-        integralSumRadians = Range.clip(integralSumInches, -integralLimit, integralLimit);
+        integralSumRadians = Range.clip(integralSumRadians, -integralLimit, integralLimit);
 
 
 //        Derivative = biar gk terlalu kenceng
-        double derivative = error - lastErrorRadians;
+        double derivative = (error - lastErrorRadians) / RadiansTimer.seconds();
         lastErrorRadians = error;
+        RadiansTimer.reset();
 
         double output = (error * kP) + (integralSumRadians * kI) + (derivative * kD);
         return output;
@@ -73,8 +82,9 @@ public class HeadingPIDController {
         integralSumDegree = Range.clip(integralSumDegree, -integralLimit, integralLimit);
 
 //        Derivative = biar gk terlalu kenceng
-        double derivative = error - lastErrorDegree;
+        double derivative = (error - lastErrorDegree) / degreeTimer.seconds();
         lastErrorDegree = error;
+        degreeTimer.reset();
 
         double output = (error * kP) + (integralSumDegree * kI) + (derivative * kD);
         return output;

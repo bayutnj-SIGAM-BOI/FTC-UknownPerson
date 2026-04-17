@@ -38,8 +38,6 @@ public class TeleopRoadRunner extends OpMode {
         Shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
         Intake = hardwareMap.get(DcMotorEx.class, "Intake");
 
-        Shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(0.5000, 0, 0, 13.1000);
         Shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
     }
@@ -62,6 +60,12 @@ public class TeleopRoadRunner extends OpMode {
         if (gamepad1.left_bumper) target = RobotConstant.blueAimingTarget;
         else if (gamepad1.right_bumper) target = RobotConstant.redAimingTarget;
         turret.aimingTurret(target, RobotX, RobotY, Heading);
+
+        if (gamepad1.left_trigger > 0.1) {
+            Intake.setPower(RobotConstant.INTAKE_SPEED);
+        } else {
+            Intake.setPower(0);
+        }
 
         if (trig.ableToShoot(RobotX, RobotY)) {
             stooperGate.setPosition(RobotConstant.OPEN_GATE);

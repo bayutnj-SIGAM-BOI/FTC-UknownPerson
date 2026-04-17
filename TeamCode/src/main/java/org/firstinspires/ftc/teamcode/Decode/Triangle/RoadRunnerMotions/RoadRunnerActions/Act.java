@@ -27,8 +27,6 @@ public class Act {
         stooperGate = hardwareMap.get(Servo.class, "Stooper");
         angleAdjuster = hardwareMap.get(Servo.class, "angleAdjuster");
 
-        Shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(0.5000, 0, 0, 13.1000);
         Shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
     }
@@ -142,6 +140,7 @@ public class Act {
             }
 
             angleAdjuster.setPosition(rc.AngleAdjuster(d));
+            return false;
         }
     }
 }

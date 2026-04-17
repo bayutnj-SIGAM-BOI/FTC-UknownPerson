@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.robotcore.external.State;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import com.acmerobotics.dashboard.config.Config;
@@ -24,8 +25,8 @@ public class turret {
     org.firstinspires.ftc.teamcode.AdvanceCode.Config r = new org.firstinspires.ftc.teamcode.AdvanceCode.Config();
     AprilTagWebcam webcam = new AprilTagWebcam();
 
-    DcMotorEx spinTurret, turretWheel;
-    Servo angleAdjuster, Stooper;
+    public DcMotorEx spinTurret, turretWheel;
+    public Servo angleAdjuster, Stooper;
     VoltageSensor myVoltageSensor;
     AprilTagDetection aprilTagDetection;
     private Telemetry telemetry;
@@ -39,6 +40,7 @@ public class turret {
     public double error = 0.0;
     public double currentRobotYaw = 0.0;
     public double currentTurretAngle = 0.0;
+    public boolean isLocked;
 
 //    Params Dashboard
 
@@ -50,20 +52,18 @@ public class turret {
     public static double spinTurretP = 0.15;
     public static double spinTurretI = 0;
     public static double spinTurretD = 0.2;
+    public static double spinTurretF = 0.0;
 
     //    turret & Shooter variables
-    public static double nearAngle = 0.5;
+    public static double nearAngle = 0.8;
     public static double farAngle = 0.0;
     private double integralSum = 0;
     private double lastError = 0;
     private double integralLimit = 15.0;
-    private double goalX = 0.0;
-    private double angleTolerance = Math.toRadians(2);
+    private final double goalX = 0.0;
+    private final double angleTolerance = Math.toRadians(2);
     public ElapsedTime spinTimer = new ElapsedTime();
 
-    IMU imu;
-    private double ticks_per_rev = 537.6898395722 * (100.0 / 20.0);
-    private double ticksToRad = (2 * Math.PI) / ticks_per_rev;
 
     public void initalize(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
@@ -75,11 +75,11 @@ public class turret {
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(turretWheelP, turretWheelI, turretWheelD, turretWheelF);
         turretWheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
-        spinTurret = hardwareMap.get(DcMotorEx.class, "spinTurret");
-        spinTurret.setDirection(DcMotorSimple.Direction.REVERSE);
-        spinTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        spinTurret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        spinTurret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        spinTurret = hardwareMap.get(DcMotorEx.class, "spinTurret");
+//        spinTurret.setDirection(DcMotorSimple.Direction.REVERSE);
+//        spinTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        spinTurret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//        spinTurret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         angleAdjuster = hardwareMap.get(Servo.class, "angleAdjuster");
         angleAdjuster.setPosition(0.8);
@@ -87,6 +87,9 @@ public class turret {
 
 //        myVoltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
         myVoltageSensor = hardwareMap.voltageSensor.iterator().next();
+
+        spinTimer.reset();
+
     }
 
     public void manualTurret(double gpad) {
@@ -112,11 +115,14 @@ public class turret {
         return isTargetFound;
     }
 
+    public void manualShooterVel(double power) {
+        turretWheel.setPower(power);
+    }
+
     public void setVelocityAuto() {
         AprilTagDetection target = setWebcam();
-
         if (target == null) {
-            r.Shooter(1500);
+            turretWheel.setPower(0);
             return;
         }
 
@@ -180,7 +186,7 @@ public class turret {
     }
 
     public void setStooperOpen() {
-        Stooper.setPosition(0.87);
+        Stooper.setPosition(0.9);
     }
 
     public void setStooperClose() {
@@ -214,42 +220,35 @@ public class turret {
 
     public void spinningTurret() {
         bearing = setWebcam();
-        double power;
-        double error;
-
         if (bearing == null) {
             spinTurret.setPower(0);
             integralSum = 0.0;
+            lastError = 0.0;
             return;
         }
 
-        this.currentTurretAngle = spinTurret.getCurrentPosition() * ticksToRad;
-        double targetAngle;
-        if (bearing != null) {
-            targetAngle = angleRadians(Math.toRadians(goalX) - Math.toRadians(bearing.ftcPose.bearing));
-        } else {
-            this.currentRobotYaw = r.getHeading();
-            targetAngle = angleRadians(-currentRobotYaw);
+        double x = bearing.ftcPose.x;
+        double y = bearing.ftcPose.y;
 
-        }
-        error = angleRadians(targetAngle - currentTurretAngle);
-        this.error = error;
+        double angle = Math.atan2(x, y); // sudut dari (0 , 0) dalam bentuk radian
+        error = angleRadians(angle);
 
-        if (Math.abs(error) < angleTolerance) {
+        if (Math.abs(this.error) < angleTolerance) {
             integralSum = 0;
             lastError = 0;
             spinTurret.setPower(0);
+            this.isLocked = true;
             return;
         }
+        this.isLocked = false;
 
-        power = Range.clip(calculatePID(error), -0.6, 0.6);
+        double power = Range.clip(calculatePID(this.error), -0.9, 0.9);
 
         spinTurret.setPower(power);
     }
 
     private double calculatePID(double error) {
         double dt = spinTimer.seconds();
-        error = angleRadians(error);
         spinTimer.reset();
 
         if (dt > 0.5) dt = 0.5;

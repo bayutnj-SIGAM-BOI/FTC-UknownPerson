@@ -37,7 +37,7 @@ public class BlueAutonomous extends LinearOpMode {
         Action turretTracking = telemetryPacket -> {
             drive.localizer.update();
             Pose2d pose = drive.localizer.getPose();
-            tp.aimingTurret(blueAimingTarget, pose.position.x, pose.position.y, Math.toDegrees(pose.heading.toDouble()));
+            tp.aimingTurret(RobotConstant.blueAimingTarget, pose.position.x, pose.position.y, Math.toDegrees(pose.heading.toDouble()));
             return true;
         };
 

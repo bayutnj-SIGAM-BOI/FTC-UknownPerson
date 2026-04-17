@@ -67,19 +67,18 @@ public final class TankDrive {
         // TODO: fill in these values based on
         //   see https://ftc-docs.firstinspires.org/en/latest/programming_resources/imu/imu.html?highlight=imu#physical-hub-mounting
         public RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection =
-                RevHubOrientationOnRobot.LogoFacingDirection.UP;
+                RevHubOrientationOnRobot.LogoFacingDirection.FORWARD;
         public RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection =
-                RevHubOrientationOnRobot.UsbFacingDirection.RIGHT;
+                RevHubOrientationOnRobot.UsbFacingDirection.LEFT;
 
         // drive model parameters
-//        public double inPerTick = 0.002988295841;
-        public double inPerTick = -0.01032998565;
-        public double trackWidthTicks = 20736;
+        public double inPerTick = 0.0002428473856;
+        public double trackWidthTicks = 4686.710953431103;
 
         // feedforward parameters (in tick units)
-        public double kS = 2.5852282095406727;
-        public double kV = 0.006215612318359448;
-        public double kA = 0.00015;
+        public double kS = 1.1145393007689144;
+        public double kV = 0.00042845822401730785;
+        public double kA = 0.0001;
 
         // path profile parameters (in inches)
         public double maxWheelVel = 50;
@@ -155,7 +154,7 @@ public final class TankDrive {
             }
 
 //             TODO: reverse encoder directions if needed
-               leftEncs.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
+            leftEncs.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
 
             this.pose = pose;
         }
@@ -196,7 +195,7 @@ public final class TankDrive {
             meanRightVel /= rightEncs.size();
 
             FlightRecorder.write("TANK_LOCALIZER_INPUTS",
-                     new TankLocalizerInputsMessage(leftReadings, rightReadings));
+                    new TankLocalizerInputsMessage(leftReadings, rightReadings));
 
             if (!initialized) {
                 initialized = true;
@@ -238,8 +237,8 @@ public final class TankDrive {
         // TODO: make sure your config has motors with these names (or change them)
         //   add additional motors on each side if you have them
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
-        leftMotors = Collections.singletonList(hardwareMap.get(DcMotorEx.class, "left_motor_Drive"));
-        rightMotors = Collections.singletonList(hardwareMap.get(DcMotorEx.class, "right_motor_Drive"));
+        leftMotors = Collections.singletonList(hardwareMap.get(DcMotorEx.class, "leftMotor"));
+        rightMotors = Collections.singletonList(hardwareMap.get(DcMotorEx.class, "rightMotor"));
 
 
         for (DcMotorEx m : leftMotors) {
@@ -251,8 +250,8 @@ public final class TankDrive {
 
         // TODO: reverse motor directions if needed
 //           leftMotors.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
-        rightMotors.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
-        leftMotors.get(0).setDirection(DcMotorSimple.Direction.FORWARD);
+        rightMotors.get(0).setDirection(DcMotorSimple.Direction.FORWARD);
+        leftMotors.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
 
         // TODO: make sure your config has an IMU with this name (can be BNO or BHI)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
@@ -261,7 +260,7 @@ public final class TankDrive {
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        localizer = new DriveLocalizer(pose);
+        localizer = new TwoDeadWheelLocalizer(hardwareMap, lazyImu.get(), PARAMS.inPerTick, pose);
 
         FlightRecorder.write("TANK_PARAMS", PARAMS);
     }
@@ -424,7 +423,7 @@ public final class TankDrive {
                     Vector2dDual.constant(new Vector2d(0, 0), 3),
                     txWorldTarget.heading.velocity().plus(
                             PARAMS.turnGain * localizer.getPose().heading.minus(txWorldTarget.heading.value()) +
-                            PARAMS.turnVelGain * (robotVelRobot.angVel - txWorldTarget.heading.velocity().value())
+                                    PARAMS.turnVelGain * (robotVelRobot.angVel - txWorldTarget.heading.velocity().value())
                     )
             );
             driveCommandWriter.write(new DriveCommandMessage(command));

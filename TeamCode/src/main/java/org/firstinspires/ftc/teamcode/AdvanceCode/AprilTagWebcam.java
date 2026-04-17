@@ -36,7 +36,8 @@ public class AprilTagWebcam {
         // Configure AprilTag processor with optimized settings
         aprilTagProcessor = new AprilTagProcessor.Builder()
                 .setLensIntrinsics(1443.28, 1443.28, 927.968, 566.107)
-                .setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
+                .setOutputUnits(DistanceUnit.INCH, AngleUnit.RADIANS)
+                .setDrawCubeProjection(true)
                 .setNumThreads(1)
                 .build();
 

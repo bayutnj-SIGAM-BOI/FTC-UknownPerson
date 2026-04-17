@@ -42,6 +42,7 @@ public class SpeedTunning {
             flyWheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
             flyWheel.setVelocity(Params.Velocity);
         }
+
         public double getVelocity() {
             return flyWheel.getVelocity();
         }
@@ -55,24 +56,4 @@ public class SpeedTunning {
         }
     }
 
-    public final class DriveBase {
-        DcMotor LeftMotor, RightMotor;
-
-        public DriveBase(HardwareMap hardwareMap) {
-            LeftMotor = hardwareMap.get(DcMotor.class, "left_motor_Drive");
-            RightMotor = hardwareMap.get(DcMotor.class, "right_motor_Drive");
-
-            LeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-            RightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        }
-        public void update() {
-            LeftMotor.setPower(Params.leftSpeed);
-            RightMotor.setPower(Params.rightSpeed);
-        }
-
-        public void stop() {
-            LeftMotor.setPower(0);
-            RightMotor.setPower(0);
-        }
-    }
 }

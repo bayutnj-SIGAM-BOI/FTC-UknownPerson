@@ -6,7 +6,6 @@ public class ableToShootTriangle {
                 && RobotConstant.MIN_ZONE_Y <= robotY && RobotConstant.MAX_ZONE_Y >= robotY;
     }
 
-
     public double calculateTrig(double x1, double y1, double x2, double y2, double x3, double y3) {
 //        Formula From Google || formula to know triangle point ||
         return (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0;
@@ -39,8 +38,6 @@ public class ableToShootTriangle {
 
         boolean True = (p1 >= 0 && p2 >= 0 && p3 >= 0) || (ps1 >= 0 && ps2 >= 0 && ps3 >= 0);
         boolean False = (p1 <= 0 && p2 <= 0 && p3 <= 0) || (ps1 <= 0 && ps2 <= 0 && ps3 <= 0);
-//        boolean isPoNeg = (p1 >= 0 && p2 >= 0 && p3 <= 0 && p3 <= 0) || (ps1 >= 0 && ps2 >= 0 && ps3 <= 0);
-//        boolean isNegPo = (p1 <= 0 && p2 <= 0 && p3 >= 0 && p3 >= 0) || (ps1 <= 0 && ps2 <= 0 && ps3 >= 0);
         boolean insideTriangle = True || False;
 
         return InsideField(RobotX, RobotY) && insideTriangle;

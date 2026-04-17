@@ -17,7 +17,7 @@ public class TurretWithPoseEstimate {
     DcMotorEx spinTurret;
     ElapsedTime spinTimer = new ElapsedTime();
     private final double TICKS_PER_REV = ((((1.0 + (46.0 / 17.0))) * (1.0 + (46.0 / 11.0))) * 28.0);
-    private final double GearRatio = 5.0;
+    private final double GearRatio = 100.0 / 20.0;
     private final double OutputSpeed = TICKS_PER_REV * GearRatio;
     final double TicksPerDegree = OutputSpeed / 360.0;
     private final double turretLimitDeg = 135.0;
@@ -52,18 +52,17 @@ public class TurretWithPoseEstimate {
 
         double angle = Math.atan2(y, x); // Vector(Pose) -> Radians
         double turret = Math.toDegrees(angle) - robotHeading;
+        double currentDeg = spinTurret.getCurrentPosition() / TicksPerDegree;
 
 //        Limit rotasinya
+        if (currentDeg > maxLimit + 5) {
+            turret = MinLimit;
+        } else if (currentDeg < MinLimit - 5) {
+            turret = maxLimit;
+        }
         turret = Range.clip(turret, MinLimit, maxLimit);
-
-        double currentDeg = spinTurret.getCurrentPosition() / TicksPerDegree;
         double error = angleWrapDegree(turret - currentDeg);
         error = Range.clip(error, -turretLimitDeg, turretLimitDeg);
-
-        if (currentDeg > maxLimit + 5 || currentDeg < MinLimit - 5) {
-            spinTurret.setPower(0);
-            return;
-        }
 
         spinTurret.setPower(Range.clip(calculatePID(error), -1, 1));
     }
