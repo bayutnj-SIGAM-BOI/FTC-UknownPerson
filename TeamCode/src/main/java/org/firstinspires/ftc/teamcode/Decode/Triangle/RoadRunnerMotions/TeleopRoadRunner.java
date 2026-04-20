@@ -7,9 +7,11 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Decode.Triangle.ColorSensor.NormalizeColorSensor;
 import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.Decode.Triangle.ableToShootTriangle;
 import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
@@ -18,12 +20,16 @@ import org.firstinspires.ftc.teamcode.Decode.Triangle.Turret.TurretWithPoseEstim
 @TeleOp
 
 public class TeleopRoadRunner extends OpMode {
-    private Servo angleAdjuster, stooperGate;
-    private TankDrive drive;
-    private DcMotorEx Shooter, Intake;
     private TurretWithPoseEstimate turret;
     private final RobotConstant rC = new RobotConstant();
     private final ableToShootTriangle trig = new ableToShootTriangle();
+    NormalizeColorSensor colorSensor;
+    NormalizeColorSensor.detectColors detectColors;
+
+    private Servo angleAdjuster, stooperGate;
+    private TankDrive drive;
+    private DcMotorEx Shooter, Intake;
+
     private Pose2d target = RobotConstant.blueAimingTarget;
 
     @Override
@@ -37,6 +43,8 @@ public class TeleopRoadRunner extends OpMode {
 
         Shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
         Intake = hardwareMap.get(DcMotorEx.class, "Intake");
+
+        colorSensor = new NormalizeColorSensor(hardwareMap);
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(0.5000, 0, 0, 13.1000);
         Shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
@@ -55,19 +63,26 @@ public class TeleopRoadRunner extends OpMode {
         double y = gamepad1.left_stick_y;
         drive.setDrivePowers(new PoseVelocity2d(new Vector2d(y, 0), x));
 
-        stooperGate.setPosition(gamepad1.a ? RobotConstant.OPEN_GATE : RobotConstant.CLOSE_GATE);
-
+//        ========== Tracking Poses turret ==========
         if (gamepad1.left_bumper) target = RobotConstant.blueAimingTarget;
         else if (gamepad1.right_bumper) target = RobotConstant.redAimingTarget;
         turret.aimingTurret(target, RobotX, RobotY, Heading);
 
+//        ========== Manually system ==========
         if (gamepad1.left_trigger > 0.1) {
             Intake.setPower(RobotConstant.INTAKE_SPEED);
         } else {
             Intake.setPower(0);
         }
 
-        if (trig.ableToShoot(RobotX, RobotY)) {
+        stooperGate.setPosition(gamepad1.a ? RobotConstant.OPEN_GATE : RobotConstant.CLOSE_GATE);
+//        ========== Auto Shooting Triangle ==========
+        detectColors = colorSensor.getDetectedColor();
+        boolean PurpleColor = detectColors == NormalizeColorSensor.detectColors.PURPLE;
+        boolean GreenColor = detectColors == NormalizeColorSensor.detectColors.GREEN;
+        boolean UnknownColor = detectColors == NormalizeColorSensor.detectColors.UNKNOWN;
+
+        if (trig.ableToShoot(RobotX, RobotY) && PurpleColor || GreenColor && !UnknownColor) {
             stooperGate.setPosition(RobotConstant.OPEN_GATE);
             angleAdjuster.setPosition(rC.AngleAdjuster(distanceTarget));
 
