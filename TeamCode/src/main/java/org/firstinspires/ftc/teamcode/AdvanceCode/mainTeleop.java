@@ -1,10 +1,12 @@
 package org.firstinspires.ftc.teamcode.AdvanceCode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
 @TeleOp
+@Disabled
 public class mainTeleop extends OpMode {
 
     turret turret = new turret();

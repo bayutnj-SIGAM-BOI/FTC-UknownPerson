@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.AdvanceCode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 @Autonomous
+@Disabled
 public class ForwardTest extends LinearOpMode {
     Config r = new Config();
 

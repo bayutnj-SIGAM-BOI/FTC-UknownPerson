@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotStatic;
 import org.firstinspires.ftc.teamcode.Decode.Triangle.Turret.TurretWithPoseEstimate;
 
 @Config
@@ -23,7 +23,7 @@ public class TurretAutoAim extends OpMode {
     private DcMotorEx Shooter;
     private TankDrive drive;
     private TurretWithPoseEstimate turret;
-    private final RobotConstant rC = new RobotConstant();
+    private final RobotStatic rC = new RobotStatic();
 
     // ── Targets ───────────────────────────────────────────────────────────────
     private final Pose2d blueAimingTarget = new Pose2d(new Vector2d(-66.4, -59.5), 0);
@@ -142,7 +142,7 @@ public class TurretAutoAim extends OpMode {
         angleAdjuster.setPosition(rC.AngleAdjuster(distanceToTarget));
 
         // ── Gate ─────────────────────────────────────────────────────────────
-        stooperGate.setPosition(gamepad1.a ? RobotConstant.OPEN_GATE : RobotConstant.CLOSE_GATE);
+        stooperGate.setPosition(gamepad1.a ? RobotStatic.OPEN_GATE : RobotStatic.CLOSE_GATE);
 
         // ── Shooter (gamepad1 Y toggle, edge-detected) ────────────────────────
         boolean yPressed = gamepad1.y;

@@ -9,11 +9,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotStatic;
 
 @Config
 public class TurretWithPoseEstimate {
-    final RobotConstant rC = new RobotConstant();
+    final RobotStatic rC = new RobotStatic();
     DcMotorEx spinTurret;
     ElapsedTime spinTimer = new ElapsedTime();
     private final double TICKS_PER_REV = ((((1.0 + (46.0 / 17.0))) * (1.0 + (46.0 / 11.0))) * 28.0);
@@ -49,9 +49,8 @@ public class TurretWithPoseEstimate {
         double x = Target.position.x - pivotX;
         double y = Target.position.y - pivotY;
 
-
         double angle = Math.atan2(y, x); // Vector(Pose) -> Radians
-        double turret = Math.toDegrees(angle) - robotHeading;
+        double turret = Math.toDegrees(angle) - Math.toDegrees(robotHeading);
         double currentDeg = spinTurret.getCurrentPosition() / TicksPerDegree;
 
 //        Limit rotasinya
@@ -76,7 +75,7 @@ public class TurretWithPoseEstimate {
 
         if (Math.abs(error) < 3.0) {
             integralSum = 0.0;
-            lastError = 0.0;
+            lastError = error;
             return 0;
         }
 

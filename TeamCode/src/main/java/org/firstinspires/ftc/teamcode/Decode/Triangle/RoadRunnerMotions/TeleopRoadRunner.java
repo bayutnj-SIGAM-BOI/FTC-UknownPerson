@@ -2,35 +2,45 @@ package org.firstinspires.ftc.teamcode.Decode.Triangle.RoadRunnerMotions;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.SleepAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.State;
 import org.firstinspires.ftc.teamcode.Decode.Triangle.ColorSensor.NormalizeColorSensor;
 import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.Decode.Triangle.ableToShootTriangle;
-import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotStatic;
 import org.firstinspires.ftc.teamcode.Decode.Triangle.Turret.TurretWithPoseEstimate;
 
 @TeleOp
 
 public class TeleopRoadRunner extends OpMode {
+    private TankDrive drive;
     private TurretWithPoseEstimate turret;
-    private final RobotConstant rC = new RobotConstant();
+    private final RobotStatic rC = new RobotStatic();
     private final ableToShootTriangle trig = new ableToShootTriangle();
     NormalizeColorSensor colorSensor;
     NormalizeColorSensor.detectColors detectColors;
-
     private Servo angleAdjuster, stooperGate;
-    private TankDrive drive;
     private DcMotorEx Shooter, Intake;
+    private Pose2d target = RobotStatic.blueAimingTarget;
 
-    private Pose2d target = RobotConstant.blueAimingTarget;
+    enum TriangleState {
+        IDLE,
+        ANGLE,
+        SHOOTING,
+        INTAKE,
+        OPEN_GATE,
+    }
+
+    private ElapsedTime StooperTime = new ElapsedTime();
 
     @Override
     public void init() {
@@ -48,6 +58,7 @@ public class TeleopRoadRunner extends OpMode {
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(0.5000, 0, 0, 13.1000);
         Shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
     }
 
     @Override
@@ -57,49 +68,77 @@ public class TeleopRoadRunner extends OpMode {
         double RobotX = getpose.position.x;
         double RobotY = getpose.position.y;
         double Heading = getpose.heading.toDouble();
-        double distanceTarget = Math.hypot(RobotX - target.position.x, RobotY - target.position.y);
 
-        double x = -gamepad1.right_stick_x;
-        double y = gamepad1.left_stick_y;
-        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(y, 0), x));
+        double Rotate = -gamepad1.right_stick_x;
+        double Forward = gamepad1.left_stick_y;
+//        double Strafe = gamepad1.left_stick_x;
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward, 0), Rotate));
 
 //        ========== Tracking Poses turret ==========
-        if (gamepad1.left_bumper) target = RobotConstant.blueAimingTarget;
-        else if (gamepad1.right_bumper) target = RobotConstant.redAimingTarget;
+        if (gamepad1.left_bumper) target = RobotStatic.blueAimingTarget;
+        else if (gamepad1.right_bumper) target = RobotStatic.redAimingTarget;
         turret.aimingTurret(target, RobotX, RobotY, Heading);
 
 //        ========== Manually system ==========
         if (gamepad1.left_trigger > 0.1) {
-            Intake.setPower(RobotConstant.INTAKE_SPEED);
+            Intake.setPower(RobotStatic.INTAKE_SPEED);
         } else {
             Intake.setPower(0);
         }
 
-        stooperGate.setPosition(gamepad1.a ? RobotConstant.OPEN_GATE : RobotConstant.CLOSE_GATE);
+//        stooperGate.setPosition(gamepad1.a ? RobotStatic.OPEN_GATE : RobotStatic.CLOSE_GATE);
 //        ========== Auto Shooting Triangle ==========
+        double distanceTarget = Math.hypot(RobotX - target.position.x, RobotY - target.position.y);
+
         detectColors = colorSensor.getDetectedColor();
         boolean PurpleColor = detectColors == NormalizeColorSensor.detectColors.PURPLE;
         boolean GreenColor = detectColors == NormalizeColorSensor.detectColors.GREEN;
         boolean UnknownColor = detectColors == NormalizeColorSensor.detectColors.UNKNOWN;
 
-        if (trig.ableToShoot(RobotX, RobotY) && PurpleColor || GreenColor && !UnknownColor) {
-            stooperGate.setPosition(RobotConstant.OPEN_GATE);
-            angleAdjuster.setPosition(rC.AngleAdjuster(distanceTarget));
-
-            if (Shooter.getVelocity() > 0 || Intake.getCurrentPosition() > 0) {
-                Shooter.setVelocity(rC.EveryWhereShooInterpolation(distanceTarget));
-                Intake.setPower(RobotConstant.INTAKE_SPEED);
-            }
-        } else {
-            stooperGate.setPosition(RobotConstant.CLOSE_GATE);
-            Shooter.setVelocity(0);
-            Intake.setPower(0);
-        }
+        updateShooterSub(RobotX, RobotY, distanceTarget, PurpleColor, GreenColor, UnknownColor);
 
         telemetry.addData("Pose", getpose);
         telemetry.addData("X", RobotX);
         telemetry.addData("Y", RobotY);
         telemetry.addData("Heading", Heading);
         telemetry.update();
+    }
+
+    TriangleState currentState = TriangleState.IDLE;
+
+    private void updateShooterSub(double RobotX, double RobotY, double distanceTarget, boolean PurpleColor, boolean GreenColor, boolean Unknown) {
+       if (trig.ableToShoot(RobotX, RobotY) && (PurpleColor || GreenColor) && !Unknown) {
+           switch (currentState) {
+               case IDLE:
+                   currentState = TriangleState.ANGLE;
+
+               case ANGLE:
+                   angleAdjuster.setPosition(rC.AngleAdjuster(distanceTarget));
+                   currentState = TriangleState.SHOOTING;
+
+               case SHOOTING:
+                   Shooter.setVelocity(rC.EveryWhereShooInterpolation(distanceTarget));
+                   if (Math.abs(Shooter.getVelocity() - rC.EveryWhereShooInterpolation(distanceTarget)) < 50.0) {
+                       currentState = TriangleState.INTAKE;
+                   }
+                   break;
+
+               case INTAKE:
+                   Intake.setPower(RobotStatic.INTAKE_SPEED);
+                   currentState = TriangleState.OPEN_GATE;
+
+               case OPEN_GATE:
+                   stooperGate.setPosition(RobotStatic.OPEN_GATE);
+                   if (StooperTime.seconds() > 1.2) {
+                       stooperGate.setPosition(RobotStatic.CLOSE_GATE);
+                   }
+                   break;
+           }
+       } else {
+           currentState = TriangleState.IDLE;
+           Shooter.setVelocity(0);
+           Intake.setPower(0);
+           stooperGate.setPosition(RobotStatic.CLOSE_GATE);
+       }
     }
 }

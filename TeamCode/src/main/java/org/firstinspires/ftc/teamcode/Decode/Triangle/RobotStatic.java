@@ -4,11 +4,10 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 
 @Config
-public class RobotConstant {
+public class RobotStatic {
     public static Pose2d blueAimingTarget = new Pose2d(-57.1, -55.3, 0);
     public static Pose2d redAimingTarget = new Pose2d(-blueAimingTarget.position.x, -blueAimingTarget.position.y, 0);
-
-    public static double[] HoodedAngle = {0.0, 0.9};
+    public static double[] HoodedAngle = {0.0 ,0.9};
     public static double OPEN_GATE = 0.5;
     public static double CLOSE_GATE = 0.9;
     public static double INTAKE_SPEED = 1.0;
@@ -25,8 +24,22 @@ public class RobotConstant {
 
     public double EveryWhereShooInterpolation(double pos) {
         double[][] dataPoints = {
-                {0, 0},
-                {0, 0}
+                {27.26, 1220},
+                {33.24, 1240},
+                {39.34, 1240},
+                {48.91, 1240},
+                {55.22, 1320},
+                {59.69, 1360},
+                {62.63, 1360},
+                {65.54, 1360},
+                {69.57, 1360},
+                {72.85, 1400},
+                {76.92, 1440},
+                {80.53, 1480},
+                {113.02, 1620},
+                {117.47, 1840},
+                {127.86, 1820},
+                {132.33, 1840},
         };
 
         if (pos <= dataPoints[0][0]) {
@@ -56,10 +69,14 @@ public class RobotConstant {
     }
 
     public double AngleAdjuster(double pos) {
-        for (int i = 0; i < HoodedAngle.length; i++) {
-            double angle = HoodedAngle[0 + 1];
+        if (pos >= 135) {
+            return HoodedAngle[2];
+        } else if(pos <= 135) {
+            return HoodedAngle[0];
+        } else {
+            double t = (pos - HoodedAngle[0]) / (HoodedAngle[0] - HoodedAngle[2]);
+            return HoodedAngle[0] + (HoodedAngle[2] - HoodedAngle[0]) * t;
         }
-        return 0.8;
     }
 
     public double pivotX(double robotX, double robotHeading) {

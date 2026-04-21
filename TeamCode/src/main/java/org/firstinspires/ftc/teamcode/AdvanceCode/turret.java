@@ -21,6 +21,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 @Config
+
 public class turret {
     org.firstinspires.ftc.teamcode.AdvanceCode.Config r = new org.firstinspires.ftc.teamcode.AdvanceCode.Config();
     AprilTagWebcam webcam = new AprilTagWebcam();

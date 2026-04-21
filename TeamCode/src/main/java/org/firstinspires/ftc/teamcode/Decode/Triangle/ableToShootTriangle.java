@@ -2,8 +2,8 @@ package org.firstinspires.ftc.teamcode.Decode.Triangle;
 
 public class ableToShootTriangle {
     public boolean InsideField(double robotX, double robotY) {
-        return RobotConstant.MIN_ZONE_X <= robotX && RobotConstant.MAX_ZONE_X >= robotX
-                && RobotConstant.MIN_ZONE_Y <= robotY && RobotConstant.MAX_ZONE_Y >= robotY;
+        return RobotStatic.MIN_ZONE_X <= robotX && RobotStatic.MAX_ZONE_X >= robotX
+                && RobotStatic.MIN_ZONE_Y <= robotY && RobotStatic.MAX_ZONE_Y >= robotY;
     }
 
     public double calculateTrig(double x1, double y1, double x2, double y2, double x3, double y3) {
@@ -12,25 +12,25 @@ public class ableToShootTriangle {
     }
 
     public boolean ableToShoot(double RobotX, double RobotY) {
-        double lX = RobotConstant.TRIANGLE_X[0];
-        double mX = RobotConstant.TRIANGLE_X[1];
-        double rX = RobotConstant.TRIANGLE_X[2];
+        double lX = RobotStatic.TRIANGLE_X[0];
+        double mX = RobotStatic.TRIANGLE_X[1];
+        double rX = RobotStatic.TRIANGLE_X[2];
 
-        double lY = RobotConstant.TRIANGLE_Y[0];
-        double mY = RobotConstant.TRIANGLE_Y[1];
-        double rY = RobotConstant.TRIANGLE_Y[2];
+        double lY = RobotStatic.TRIANGLE_Y[0];
+        double mY = RobotStatic.TRIANGLE_Y[1];
+        double rY = RobotStatic.TRIANGLE_Y[2];
 
         double p1 = calculateTrig(RobotX, RobotY, lX, lY, mX, mY);
         double p2 = calculateTrig(RobotX, RobotY, mX, mY, rX, rY);
         double p3 = calculateTrig(RobotX, RobotY, rX, rY, lX, lY);
 
-        double lXs = RobotConstant.TRIANGLE_XS[0];
-        double mXs = RobotConstant.TRIANGLE_XS[1];
-        double rXs = RobotConstant.TRIANGLE_XS[2];
+        double lXs = RobotStatic.TRIANGLE_XS[0];
+        double mXs = RobotStatic.TRIANGLE_XS[1];
+        double rXs = RobotStatic.TRIANGLE_XS[2];
 
-        double lYs = RobotConstant.TRIANGLE_YS[0];
-        double mYs = RobotConstant.TRIANGLE_YS[1];
-        double rYs = RobotConstant.TRIANGLE_YS[2];
+        double lYs = RobotStatic.TRIANGLE_YS[0];
+        double mYs = RobotStatic.TRIANGLE_YS[1];
+        double rYs = RobotStatic.TRIANGLE_YS[2];
 
         double ps1 = calculateTrig(RobotX, RobotY, lXs, lYs, mXs, mYs);
         double ps2 = calculateTrig(RobotX, RobotY, mXs, mYs, rXs, rYs);

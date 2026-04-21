@@ -11,16 +11,16 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotStatic;
 
 public class Act {
-    private final RobotConstant rc;
+    private final RobotStatic rc;
     private DcMotorEx Intake, Shooter;
     private Servo stooperGate, angleAdjuster;
 
 
     public Act(HardwareMap hardwareMap, Telemetry telemetry) {
-        rc = new RobotConstant();
+        rc = new RobotStatic();
 
         Shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
         Intake = hardwareMap.get(DcMotorEx.class, "Intake");

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.AdvanceCode;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -16,6 +17,7 @@ import org.firstinspires.ftc.teamcode.TankDrive;
 import org.opencv.core.Mat;
 
 @TeleOp
+@Disabled
 @com.acmerobotics.dashboard.config.Config
 public class turretPose extends OpMode {
 

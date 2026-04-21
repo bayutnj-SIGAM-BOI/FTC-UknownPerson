@@ -10,14 +10,14 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.Decode.Triangle.RoadRunnerMotions.RoadRunnerActions.Act;
 import org.firstinspires.ftc.teamcode.TankDrive;
-import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotConstant;
+import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotStatic;
 import org.firstinspires.ftc.teamcode.Decode.Triangle.Turret.TurretWithPoseEstimate;
 
 @Autonomous
 public class BlueAutonomous extends LinearOpMode {
     TurretWithPoseEstimate tp;
     Act act;
-    RobotConstant rc = new RobotConstant();
+    RobotStatic rc = new RobotStatic();
 
     private final Pose2d ShootingPose = new Pose2d(-28.2, -28.2, Math.toRadians(30));
     private final Pose2d firstPose = new Pose2d(-28.0, -28.2, Math.toRadians(90));
@@ -32,12 +32,12 @@ public class BlueAutonomous extends LinearOpMode {
 //        act = new Act(hardwareMap, telemetry);
 
         tp = new TurretWithPoseEstimate(hardwareMap);
-        double Distance = Math.hypot(ShootingPose.position.x - RobotConstant.blueAimingTarget.position.x, ShootingPose.position.y - RobotConstant.blueAimingTarget.position.y);
+        double Distance = Math.hypot(ShootingPose.position.x - RobotStatic.blueAimingTarget.position.x, ShootingPose.position.y - RobotStatic.blueAimingTarget.position.y);
 
         Action turretTracking = telemetryPacket -> {
             drive.localizer.update();
             Pose2d pose = drive.localizer.getPose();
-            tp.aimingTurret(RobotConstant.blueAimingTarget, pose.position.x, pose.position.y, Math.toDegrees(pose.heading.toDouble()));
+            tp.aimingTurret(RobotStatic.blueAimingTarget, pose.position.x, pose.position.y, Math.toDegrees(pose.heading.toDouble()));
             return true;
         };
 
@@ -46,8 +46,8 @@ public class BlueAutonomous extends LinearOpMode {
                 .build();
 
         Action servoStooper = drive.actionBuilder(ShootingPose)
-                .stopAndAdd(act.setStooper(RobotConstant.OPEN_GATE))
-                .afterTime(1.5, act.setStooper(RobotConstant.CLOSE_GATE))
+                .stopAndAdd(act.setStooper(RobotStatic.OPEN_GATE))
+                .afterTime(1.5, act.setStooper(RobotStatic.CLOSE_GATE))
                 .build();
 
 
