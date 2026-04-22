@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Decode.Triangle;
+package org.firstinspires.ftc.teamcode.DECODE;
 
 public class ableToShootTriangle {
     public boolean InsideField(double robotX, double robotY) {

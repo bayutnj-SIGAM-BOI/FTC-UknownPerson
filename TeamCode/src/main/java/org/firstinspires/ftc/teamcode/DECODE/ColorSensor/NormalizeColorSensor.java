@@ -1,9 +1,11 @@
-package org.firstinspires.ftc.teamcode.Decode.Triangle.ColorSensor;
+package org.firstinspires.ftc.teamcode.DECODE.ColorSensor;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class NormalizeColorSensor {
     NormalizedColorSensor colorSensor;
@@ -24,18 +26,29 @@ public class NormalizeColorSensor {
 
     }
 
-    public detectColors getDetectedColor() {
+    public detectColors getDetectedColor(Telemetry telemetry) {
         NormalizedRGBA colors = colorSensor.getNormalizedColors();
 
-        float NormalizePurple, NormalizeGreen;
-        NormalizePurple = colors.blue / colors.alpha;
-        NormalizeGreen = colors.red / colors.alpha;
+        float red = colors.red / colors.alpha;
+        float green = colors.blue / colors.alpha;
+        float blue = colors.blue / colors.alpha;
 
-        if (NormalizePurple > 0.3 && NormalizeGreen <= 0.3) {
+        boolean isPurple = (red > 0.5) && (blue > 0.1) && (green < 0.5);
+        boolean isGreen = (red < 0.5) && (blue > 0.5) && (green > 0.6);
+
+        if (isPurple) {
             return detectColors.PURPLE;
-        } else if (NormalizePurple < 0.3 && NormalizeGreen >= 0.3) {
+        } else if (isGreen) {
             return detectColors.GREEN;
         }
+
+        telemetry.addData("R", colors.red / colors.alpha);
+        telemetry.addData("G", colors.green / colors.alpha);
+        telemetry.addData("B", colors.blue / colors.alpha);
+        telemetry.addData("Purple", isPurple ? "PURPLE" : null);
+        telemetry.addData("Green", isGreen ? "GREEN" : null);
+        telemetry.update();
+
         return detectColors.UNKNOWN;
     }
 }

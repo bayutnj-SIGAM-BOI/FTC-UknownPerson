@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotStatic;
-import org.firstinspires.ftc.teamcode.Decode.Triangle.Turret.TurretWithPoseEstimate;
+import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
+import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
 
 @Config
 @TeleOp

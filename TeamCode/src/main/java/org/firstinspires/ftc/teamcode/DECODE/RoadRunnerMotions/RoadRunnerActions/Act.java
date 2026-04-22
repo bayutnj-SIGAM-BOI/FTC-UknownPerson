@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Decode.Triangle.RoadRunnerMotions.RoadRunnerActions;
+package org.firstinspires.ftc.teamcode.DECODE.RoadRunnerMotions.RoadRunnerActions;
 
 import androidx.annotation.NonNull;
 
@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.Decode.Triangle.RobotStatic;
+import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
 
 public class Act {
     private final RobotStatic rc;

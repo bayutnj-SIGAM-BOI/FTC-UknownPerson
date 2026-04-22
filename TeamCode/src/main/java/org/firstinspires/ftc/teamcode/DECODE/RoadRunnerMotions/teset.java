@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Decode.Triangle.RoadRunnerMotions;
+package org.firstinspires.ftc.teamcode.DECODE.RoadRunnerMotions;
 
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;

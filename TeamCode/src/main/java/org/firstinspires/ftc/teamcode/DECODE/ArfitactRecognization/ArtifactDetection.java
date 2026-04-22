@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Decode.Triangle.ArfitactRecognization;
+package org.firstinspires.ftc.teamcode.DECODE.ArfitactRecognization;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 

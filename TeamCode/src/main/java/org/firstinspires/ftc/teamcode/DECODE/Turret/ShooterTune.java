@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Decode.Triangle.Turret;
+package org.firstinspires.ftc.teamcode.DECODE.Turret;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
