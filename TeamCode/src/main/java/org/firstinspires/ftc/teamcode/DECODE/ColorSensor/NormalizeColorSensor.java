@@ -16,8 +16,8 @@ public class NormalizeColorSensor {
         UNKNOWN
     }
 
-    public NormalizeColorSensor(HardwareMap hardwareMap) {
-        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorSensor");
+    public NormalizeColorSensor(HardwareMap hardwareMap, String name) {
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, name);
         colorSensor.setGain(4);
 
         if (colorSensor instanceof SwitchableLight) {
@@ -30,11 +30,11 @@ public class NormalizeColorSensor {
         NormalizedRGBA colors = colorSensor.getNormalizedColors();
 
         float red = colors.red / colors.alpha;
-        float green = colors.blue / colors.alpha;
+        float green = colors.green / colors.alpha;
         float blue = colors.blue / colors.alpha;
 
         boolean isPurple = (red > 0.5) && (blue > 0.1) && (green < 0.5);
-        boolean isGreen = (red < 0.5) && (blue > 0.5) && (green > 0.6);
+        boolean isGreen = (red < 0.4) && (blue < 0.4) && (green > 0.5);
 
         if (isPurple) {
             return detectColors.PURPLE;

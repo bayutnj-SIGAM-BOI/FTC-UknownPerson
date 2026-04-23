@@ -18,14 +18,13 @@ import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
 import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
 
 @TeleOp
-
 public class TeleopRoadRunner extends OpMode {
     private TankDrive drive;
     private TurretWithPoseEstimate turret;
     private final RobotStatic rC = new RobotStatic();
     private final ableToShootTriangle trig = new ableToShootTriangle();
-    NormalizeColorSensor colorSensor;
-    NormalizeColorSensor.detectColors detectColors;
+    NormalizeColorSensor backTop, backDown, frontSide;
+    NormalizeColorSensor.detectColors backTopColor, backDownColor, frontSideColor;
     private Servo angleAdjuster, stooperGate;
     private DcMotorEx Shooter, Intake;
     private Pose2d target = RobotStatic.blueAimingTarget;
@@ -38,7 +37,8 @@ public class TeleopRoadRunner extends OpMode {
         OPEN_GATE,
     }
 
-    private ElapsedTime StooperTime = new ElapsedTime();
+    TriangleState currentState = TriangleState.IDLE;
+    private final ElapsedTime StooperTime = new ElapsedTime();
 
     @Override
     public void init() {
@@ -52,57 +52,110 @@ public class TeleopRoadRunner extends OpMode {
         Shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
         Intake = hardwareMap.get(DcMotorEx.class, "Intake");
 
-        colorSensor = new NormalizeColorSensor(hardwareMap);
+        backTop = new NormalizeColorSensor(hardwareMap, "backTop");
+        backDown = new NormalizeColorSensor(hardwareMap, "backDown");
+        frontSide = new NormalizeColorSensor(hardwareMap, "frontSide");
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(0.5000, 0, 0, 13.1000);
         Shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+    }
 
+    @Override
+    public void start() {
+        StooperTime.reset();
+        currentState = TriangleState.IDLE;
     }
 
     @Override
     public void loop() {
         drive.localizer.update();
-        Pose2d getpose = drive.localizer.getPose();
-        double RobotX = getpose.position.x;
-        double RobotY = getpose.position.y;
-        double Heading = getpose.heading.toDouble();
+        Pose2d getPose = drive.localizer.getPose();
+        double RobotX = getPose.position.x;
+        double RobotY = getPose.position.y;
+        double Heading = getPose.heading.toDouble();
+
+        double distanceTarget = Math.hypot(RobotX - target.position.x, RobotY - target.position.y);
 
         double Rotate = -gamepad1.right_stick_x;
         double Forward = gamepad1.left_stick_y;
-//        double Strafe = gamepad1.left_stick_x;
-        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward, 0), Rotate));
+        double slowModeSpeed;
+        if (gamepad1.right_bumper) {
+            slowModeSpeed = 0.6;
+            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward * slowModeSpeed, 0), Rotate * slowModeSpeed));
 
 //        ========== Tracking Poses turret ==========
-        if (gamepad1.left_bumper) target = RobotStatic.blueAimingTarget;
-        else if (gamepad1.right_bumper) target = RobotStatic.redAimingTarget;
-        turret.aimingTurret(target, RobotX, RobotY, Heading);
+            if (gamepad1.left_bumper) {
+                target = RobotStatic.blueAimingTarget;
+                gamepad1.setLedColor(0, 0, 1, 100);
+            } else if (gamepad1.right_bumper) {
+                target = RobotStatic.redAimingTarget;
+                gamepad1.setLedColor(1, 0, 0, 100);
+            }
+            turret.aimingTurret(target, RobotX, RobotY, Heading);
 
 //        ========== Manually system ==========
-        if (gamepad1.left_trigger > 0.1) {
-            Intake.setPower(RobotStatic.INTAKE_SPEED);
-        } else {
-            Intake.setPower(0);
+            if (gamepad1.left_trigger > 0.1) {
+                Intake.setPower(RobotStatic.INTAKE_SPEED);
+            } else {
+                Intake.setPower(0);
+            }
+            if (gamepad1.a) {
+                Intake.setPower(0);
+            }
+
+//        Color sensor Declared
+            backTopColor = backTop.getDetectedColor(telemetry);
+            backDownColor = backDown.getDetectedColor(telemetry);
+            frontSideColor = frontSide.getDetectedColor(telemetry);
+
+            boolean PurpleColor = backTopColor == NormalizeColorSensor.detectColors.PURPLE ||
+                    backDownColor == NormalizeColorSensor.detectColors.PURPLE ||
+                    frontSideColor == NormalizeColorSensor.detectColors.PURPLE;
+
+            boolean GreenColor = backTopColor == NormalizeColorSensor.detectColors.GREEN ||
+                    backDownColor == NormalizeColorSensor.detectColors.GREEN ||
+                    frontSideColor == NormalizeColorSensor.detectColors.GREEN;
+
+            boolean UnknownColor = backTopColor == NormalizeColorSensor.detectColors.UNKNOWN ||
+                    backDownColor == NormalizeColorSensor.detectColors.UNKNOWN ||
+                    frontSideColor == NormalizeColorSensor.detectColors.UNKNOWN;
+
+//        Auto Intake if no artifact
+            if (!(PurpleColor && GreenColor) && !UnknownColor) {
+                Intake.setPower(1);
+            }
+//        Know the Gate is Open
+            if (currentState == TriangleState.OPEN_GATE) {
+                gamepad1.rumble(1.0, 1.0, 300);
+            }
+
+//        State Machine logic auto shooting when the robot is on the shooting Zone
+            updateShooterSub(RobotX, RobotY, distanceTarget, PurpleColor, GreenColor, UnknownColor);
+
+//        Helper driver show able to shoot or not
+            if (!trig.ableToShoot(RobotX, RobotY)) {
+                gamepad1.setLedColor(1, 0, 0, -1);
+            } else {
+                gamepad1.setLedColor(0, 1, 0, -1);
+            }
+
+            telemetry.addLine("========== ROBOT STATE ==========");
+            telemetry.addData("State", currentState);
+            telemetry.addData("Pose", getPose);
+            telemetry.addData("X", RobotX);
+            telemetry.addData("Y", RobotY);
+            telemetry.addData("Heading", Heading);
+            telemetry.addData("Distance", distanceTarget);
+            telemetry.addLine("========== COLOR SENSORS ==========");
+            telemetry.addData("backTop", backTopColor);
+            telemetry.addData("backDownColor", backDownColor);
+            telemetry.addData("frontSideColor", frontSideColor);
+            telemetry.addData("Purple", PurpleColor);
+            telemetry.addData("Green", GreenColor);
+            telemetry.addData("Unknown", UnknownColor);
+            telemetry.update();
         }
-
-//        stooperGate.setPosition(gamepad1.a ? RobotStatic.OPEN_GATE : RobotStatic.CLOSE_GATE);
-//        ========== Auto Shooting Triangle ==========
-        double distanceTarget = Math.hypot(RobotX - target.position.x, RobotY - target.position.y);
-
-        detectColors = colorSensor.getDetectedColor(telemetry);
-        boolean PurpleColor = detectColors == NormalizeColorSensor.detectColors.PURPLE;
-        boolean GreenColor = detectColors == NormalizeColorSensor.detectColors.GREEN;
-        boolean UnknownColor = detectColors == NormalizeColorSensor.detectColors.UNKNOWN;
-
-        updateShooterSub(RobotX, RobotY, distanceTarget, PurpleColor, GreenColor, UnknownColor);
-
-        telemetry.addData("Pose", getpose);
-        telemetry.addData("X", RobotX);
-        telemetry.addData("Y", RobotY);
-        telemetry.addData("Heading", Heading);
-        telemetry.update();
     }
-
-    TriangleState currentState = TriangleState.IDLE;
 
     private void updateShooterSub(double RobotX, double RobotY, double distanceTarget, boolean PurpleColor, boolean GreenColor, boolean Unknown) {
        if (trig.ableToShoot(RobotX, RobotY) && (PurpleColor || GreenColor) && !Unknown) {
@@ -134,8 +187,8 @@ public class TeleopRoadRunner extends OpMode {
            }
        } else {
            currentState = TriangleState.IDLE;
+           StooperTime.reset();
            Shooter.setVelocity(0);
-           Intake.setPower(0);
            stooperGate.setPosition(RobotStatic.CLOSE_GATE);
        }
     }

@@ -91,14 +91,13 @@ public class TurretWithPoseEstimate {
 
         double output = (error * kP) + (integralSum * kI) + (derivative * kD);
 //        klo ada target miss kecil bisa dibenerin klo si motor gk kuat
-        if (Math.abs(output) < 0.5 && Math.abs(error) > 0.3) {
+        if (Math.abs(output) < 0.5 && Math.abs(error) > 0.5) {
             output = 0.05 * Math.signum(output);
         }
 
         return output;
     }
-
-    //    Fungsi yang membantu agar tidak kebanyakan muter.
+//    NgeWrap putaran
     private double angleWrapDegree(double degree) {
         while (degree > 180) {
             degree -= 360;
