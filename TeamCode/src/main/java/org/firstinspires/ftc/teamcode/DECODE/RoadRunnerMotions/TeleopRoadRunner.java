@@ -1,8 +1,13 @@
 package org.firstinspires.ftc.teamcode.DECODE.RoadRunnerMotions;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -79,7 +84,7 @@ public class TeleopRoadRunner extends OpMode {
         double Rotate = -gamepad1.right_stick_x;
         double Forward = gamepad1.left_stick_y;
         double slowModeSpeed;
-        if (gamepad1.right_bumper) {
+        if (gamepad1.right_trigger > 0.4) {
             slowModeSpeed = 0.6;
             drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward * slowModeSpeed, 0), Rotate * slowModeSpeed));
 
@@ -94,16 +99,11 @@ public class TeleopRoadRunner extends OpMode {
             turret.aimingTurret(target, RobotX, RobotY, Heading);
 
 //        ========== Manually system ==========
-            if (gamepad1.left_trigger > 0.1) {
-                Intake.setPower(RobotStatic.INTAKE_SPEED);
-            } else {
-                Intake.setPower(0);
-            }
-            if (gamepad1.a) {
-                Intake.setPower(0);
-            }
+            if (gamepad1.left_trigger > 0.1) { Intake.setPower(RobotStatic.INTAKE_SPEED);
+            } else { Intake.setPower(0); }
+            if (gamepad1.a) { Intake.setPower(0); }
 
-//        Color sensor Declared
+//        Color sensor Declaration
             backTopColor = backTop.getDetectedColor(telemetry);
             backDownColor = backDown.getDetectedColor(telemetry);
             frontSideColor = frontSide.getDetectedColor(telemetry);
@@ -121,22 +121,40 @@ public class TeleopRoadRunner extends OpMode {
                     frontSideColor == NormalizeColorSensor.detectColors.UNKNOWN;
 
 //        Auto Intake if no artifact
-            if (!(PurpleColor && GreenColor) && !UnknownColor) {
-                Intake.setPower(1);
-            }
+            if (!(PurpleColor && GreenColor) && !UnknownColor) { Intake.setPower(1);}
 //        Know the Gate is Open
-            if (currentState == TriangleState.OPEN_GATE) {
-                gamepad1.rumble(1.0, 1.0, 300);
-            }
+            if (currentState == TriangleState.OPEN_GATE) { gamepad1.rumble(1.0, 1.0, 300);}
 
 //        State Machine logic auto shooting when the robot is on the shooting Zone
             updateShooterSub(RobotX, RobotY, distanceTarget, PurpleColor, GreenColor, UnknownColor);
 
 //        Helper driver show able to shoot or not
-            if (!trig.ableToShoot(RobotX, RobotY)) {
-                gamepad1.setLedColor(1, 0, 0, -1);
-            } else {
-                gamepad1.setLedColor(0, 1, 0, -1);
+            if (!trig.ableToShoot(RobotX, RobotY)) { gamepad1.setLedColor(1, 0, 0, -1);
+            } else { gamepad1.setLedColor(0, 1, 0, -1);}
+
+//            Auto go to the determine location
+            if (gamepad1.dpadUpWasPressed()) {
+                Action driveToTriangleBig = drive.actionBuilder(getPose)
+                        .lineToX(-23.3)
+                        .build();
+                Actions.runBlocking(new ParallelAction(driveToTriangleBig));
+            }
+            if (gamepad1.dpadDownWasPressed()) {
+                Action driveToTriangleSmall = drive.actionBuilder(getPose)
+                        .lineToX(56.9)
+                        .build();
+                Actions.runBlocking(new ParallelAction(driveToTriangleSmall));
+            }
+            if (gamepad1.dpadLeftWasPressed()) {
+                Action driveToLoadingZoneRedAlliance = drive.actionBuilder(getPose)
+                        .build();
+                Actions.runBlocking(new ParallelAction(driveToLoadingZoneRedAlliance));
+            }
+            if (gamepad1.dpadRightWasPressed()) {
+                Action driveToLoadingZoneBlueAlliance = drive.actionBuilder(getPose)
+                        .lineToX(57.5)
+                        .build();
+                Actions.runBlocking(new ParallelAction(driveToLoadingZoneBlueAlliance));
             }
 
             telemetry.addLine("========== ROBOT STATE ==========");
