@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.DECODE.RoadRunnerMotions;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
@@ -81,98 +79,99 @@ public class TeleopRoadRunner extends OpMode {
 
         double distanceTarget = Math.hypot(RobotX - target.position.x, RobotY - target.position.y);
 
-        double Rotate = -gamepad1.right_stick_x;
-        double Forward = gamepad1.left_stick_y;
-        double slowModeSpeed;
+        double slowModeSpeed = 0;
         if (gamepad1.right_trigger > 0.4) {
             slowModeSpeed = 0.6;
-            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward * slowModeSpeed, 0), Rotate * slowModeSpeed));
+        }
+
+        double Rotate = -gamepad1.right_stick_x;
+        double Forward = gamepad1.left_stick_y;
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward * slowModeSpeed, 0), Rotate * slowModeSpeed));
 
 //        ========== Tracking Poses turret ==========
-            if (gamepad1.left_bumper) {
+        if (gamepad1.left_bumper) {
                 target = RobotStatic.blueAimingTarget;
                 gamepad1.setLedColor(0, 0, 1, 100);
             } else if (gamepad1.right_bumper) {
                 target = RobotStatic.redAimingTarget;
                 gamepad1.setLedColor(1, 0, 0, 100);
             }
-            turret.aimingTurret(target, RobotX, RobotY, Heading);
+        turret.aimingTurret(target, RobotX, RobotY, Heading);
 
 //        ========== Manually system ==========
-            if (gamepad1.left_trigger > 0.1) { Intake.setPower(RobotStatic.INTAKE_SPEED);
+        if (gamepad1.left_trigger > 0.1) { Intake.setPower(RobotStatic.INTAKE_SPEED);
             } else { Intake.setPower(0); }
-            if (gamepad1.a) { Intake.setPower(0); }
+        if (gamepad1.a) { Intake.setPower(0); }
 
 //        Color sensor Declaration
-            backTopColor = backTop.getDetectedColor(telemetry);
-            backDownColor = backDown.getDetectedColor(telemetry);
-            frontSideColor = frontSide.getDetectedColor(telemetry);
+        backTopColor = backTop.getDetectedColor(telemetry);
+        backDownColor = backDown.getDetectedColor(telemetry);
+        frontSideColor = frontSide.getDetectedColor(telemetry);
 
-            boolean PurpleColor = backTopColor == NormalizeColorSensor.detectColors.PURPLE ||
+        boolean PurpleColor = backTopColor == NormalizeColorSensor.detectColors.PURPLE ||
                     backDownColor == NormalizeColorSensor.detectColors.PURPLE ||
                     frontSideColor == NormalizeColorSensor.detectColors.PURPLE;
 
-            boolean GreenColor = backTopColor == NormalizeColorSensor.detectColors.GREEN ||
+        boolean GreenColor = backTopColor == NormalizeColorSensor.detectColors.GREEN ||
                     backDownColor == NormalizeColorSensor.detectColors.GREEN ||
                     frontSideColor == NormalizeColorSensor.detectColors.GREEN;
 
-            boolean UnknownColor = backTopColor == NormalizeColorSensor.detectColors.UNKNOWN ||
+        boolean UnknownColor = backTopColor == NormalizeColorSensor.detectColors.UNKNOWN ||
                     backDownColor == NormalizeColorSensor.detectColors.UNKNOWN ||
                     frontSideColor == NormalizeColorSensor.detectColors.UNKNOWN;
 
 //        Auto Intake if no artifact
-            if (!(PurpleColor && GreenColor) && !UnknownColor) { Intake.setPower(1);}
+        if (!(PurpleColor && GreenColor) && !UnknownColor) { Intake.setPower(1);}
 //        Know the Gate is Open
-            if (currentState == TriangleState.OPEN_GATE) { gamepad1.rumble(1.0, 1.0, 300);}
+        if (currentState == TriangleState.OPEN_GATE) { gamepad1.rumble(1.0, 1.0, 300);}
 
 //        State Machine logic auto shooting when the robot is on the shooting Zone
-            updateShooterSub(RobotX, RobotY, distanceTarget, PurpleColor, GreenColor, UnknownColor);
+        updateShooterSub(RobotX, RobotY, distanceTarget, PurpleColor, GreenColor, UnknownColor);
 
 //        Helper driver show able to shoot or not
-            if (!trig.ableToShoot(RobotX, RobotY)) { gamepad1.setLedColor(1, 0, 0, -1);
+        if (!trig.ableToShoot(RobotX, RobotY)) { gamepad1.setLedColor(1, 0, 0, -1);
             } else { gamepad1.setLedColor(0, 1, 0, -1);}
 
 //            Auto go to the determine location
-            if (gamepad1.dpadUpWasPressed()) {
+        if (gamepad1.dpadUpWasPressed()) {
                 Action driveToTriangleBig = drive.actionBuilder(getPose)
                         .lineToX(-23.3)
                         .build();
                 Actions.runBlocking(new ParallelAction(driveToTriangleBig));
             }
-            if (gamepad1.dpadDownWasPressed()) {
+        if (gamepad1.dpadDownWasPressed()) {
                 Action driveToTriangleSmall = drive.actionBuilder(getPose)
                         .lineToX(56.9)
                         .build();
                 Actions.runBlocking(new ParallelAction(driveToTriangleSmall));
             }
-            if (gamepad1.dpadLeftWasPressed()) {
+        if (gamepad1.dpadLeftWasPressed()) {
                 Action driveToLoadingZoneRedAlliance = drive.actionBuilder(getPose)
                         .build();
                 Actions.runBlocking(new ParallelAction(driveToLoadingZoneRedAlliance));
             }
-            if (gamepad1.dpadRightWasPressed()) {
+        if (gamepad1.dpadRightWasPressed()) {
                 Action driveToLoadingZoneBlueAlliance = drive.actionBuilder(getPose)
                         .lineToX(57.5)
                         .build();
                 Actions.runBlocking(new ParallelAction(driveToLoadingZoneBlueAlliance));
             }
 
-            telemetry.addLine("========== ROBOT STATE ==========");
-            telemetry.addData("State", currentState);
-            telemetry.addData("Pose", getPose);
-            telemetry.addData("X", RobotX);
-            telemetry.addData("Y", RobotY);
-            telemetry.addData("Heading", Heading);
-            telemetry.addData("Distance", distanceTarget);
-            telemetry.addLine("========== COLOR SENSORS ==========");
-            telemetry.addData("backTop", backTopColor);
-            telemetry.addData("backDownColor", backDownColor);
-            telemetry.addData("frontSideColor", frontSideColor);
-            telemetry.addData("Purple", PurpleColor);
-            telemetry.addData("Green", GreenColor);
-            telemetry.addData("Unknown", UnknownColor);
-            telemetry.update();
-        }
+        telemetry.addLine("========== ROBOT STATE ==========");
+        telemetry.addData("State", currentState);
+        telemetry.addData("Pose", getPose);
+        telemetry.addData("X", RobotX);
+        telemetry.addData("Y", RobotY);
+        telemetry.addData("Heading", Heading);
+        telemetry.addData("Distance", distanceTarget);
+        telemetry.addLine("========== COLOR SENSORS ==========");
+        telemetry.addData("backTop", backTopColor);
+        telemetry.addData("backDownColor", backDownColor);
+        telemetry.addData("frontSideColor", frontSideColor);
+        telemetry.addData("Purple", PurpleColor);
+        telemetry.addData("Green", GreenColor);
+        telemetry.addData("Unknown", UnknownColor);
+        telemetry.update();
     }
 
     private void updateShooterSub(double RobotX, double RobotY, double distanceTarget, boolean PurpleColor, boolean GreenColor, boolean Unknown) {
