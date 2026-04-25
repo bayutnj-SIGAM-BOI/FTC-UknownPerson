@@ -3,7 +3,9 @@ package org.firstinspires.ftc.teamcode.DECODE.RoadRunnerMotions;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Pose2dDual;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.PoseVelocity2dDual;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -12,8 +14,11 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.robot.Robot;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.sun.tools.javac.comp.Enter;
 
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DECODE.ColorSensor.NormalizeColorSensor;
 import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.DECODE.ableToShootTriangle;
@@ -40,7 +45,7 @@ public class TeleopRoadRunner extends OpMode {
         OPEN_GATE,
     }
 
-    TriangleState currentState = TriangleState.IDLE;
+    private TriangleState currentState = TriangleState.IDLE;
     private final ElapsedTime StooperTime = new ElapsedTime();
 
     @Override
@@ -61,6 +66,8 @@ public class TeleopRoadRunner extends OpMode {
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(0.5000, 0, 0, 13.1000);
         Shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+        stooperGate.setPosition(RobotStatic.CLOSE_GATE);
     }
 
     @Override
@@ -79,11 +86,7 @@ public class TeleopRoadRunner extends OpMode {
 
         double distanceTarget = Math.hypot(RobotX - target.position.x, RobotY - target.position.y);
 
-        double slowModeSpeed = 0;
-        if (gamepad1.right_trigger > 0.4) {
-            slowModeSpeed = 0.6;
-        }
-
+        double slowModeSpeed = (gamepad1.right_trigger > 0.4) ? 0.4 : 1.0;
         double Rotate = -gamepad1.right_stick_x;
         double Forward = gamepad1.left_stick_y;
         drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward * slowModeSpeed, 0), Rotate * slowModeSpeed));
@@ -97,6 +100,10 @@ public class TeleopRoadRunner extends OpMode {
                 gamepad1.setLedColor(1, 0, 0, 100);
             }
         turret.aimingTurret(target, RobotX, RobotY, Heading);
+
+        if (turret.isAimed()) {
+            gamepad1.setLedColor(0, 1, 0, -1);
+        }
 
 //        ========== Manually system ==========
         if (gamepad1.left_trigger > 0.1) { Intake.setPower(RobotStatic.INTAKE_SPEED);
@@ -121,8 +128,8 @@ public class TeleopRoadRunner extends OpMode {
                     frontSideColor == NormalizeColorSensor.detectColors.UNKNOWN;
 
 //        Auto Intake if no artifact
-        if (!(PurpleColor && GreenColor) && !UnknownColor) { Intake.setPower(1);}
-//        Know the Gate is Open
+        if (!PurpleColor && !GreenColor && !UnknownColor) { Intake.setPower(1);}
+//        Rumble when Gate is Open
         if (currentState == TriangleState.OPEN_GATE) { gamepad1.rumble(1.0, 1.0, 300);}
 
 //        State Machine logic auto shooting when the robot is on the shooting Zone
@@ -132,30 +139,44 @@ public class TeleopRoadRunner extends OpMode {
         if (!trig.ableToShoot(RobotX, RobotY)) { gamepad1.setLedColor(1, 0, 0, -1);
             } else { gamepad1.setLedColor(0, 1, 0, -1);}
 
-//            Auto go to the determine location
-        if (gamepad1.dpadUpWasPressed()) {
-                Action driveToTriangleBig = drive.actionBuilder(getPose)
-                        .lineToX(-23.3)
-                        .build();
-                Actions.runBlocking(new ParallelAction(driveToTriangleBig));
-            }
-        if (gamepad1.dpadDownWasPressed()) {
-                Action driveToTriangleSmall = drive.actionBuilder(getPose)
-                        .lineToX(56.9)
-                        .build();
-                Actions.runBlocking(new ParallelAction(driveToTriangleSmall));
-            }
-        if (gamepad1.dpadLeftWasPressed()) {
-                Action driveToLoadingZoneRedAlliance = drive.actionBuilder(getPose)
-                        .build();
-                Actions.runBlocking(new ParallelAction(driveToLoadingZoneRedAlliance));
-            }
-        if (gamepad1.dpadRightWasPressed()) {
-                Action driveToLoadingZoneBlueAlliance = drive.actionBuilder(getPose)
-                        .lineToX(57.5)
-                        .build();
-                Actions.runBlocking(new ParallelAction(driveToLoadingZoneBlueAlliance));
-            }
+//            Auto drive to the determine Zones
+        if (gamepad1.dpad_up && !trig.ableToShoot(RobotX, RobotY)) {
+            Pose2d EnterShootingZone = new Pose2d(RobotStatic.TRIANGLE_X[1],
+                    RobotStatic.TRIANGLE_Y[1], Heading);
+
+            Action driveToZone = drive.actionBuilder(getPose)
+                    .lineToX(EnterShootingZone.position.x)
+                    .lineToY(EnterShootingZone.position.y)
+                    .build();
+            Actions.runBlocking(new ParallelAction(driveToZone));
+        }
+        if (gamepad1.dpad_down && !trig.ableToShoot(RobotX, RobotY)) {
+            Pose2d EnterShootingZone = new Pose2d(RobotStatic.TRIANGLE_XS[1], RobotStatic.TRIANGLE_YS[1], Heading);
+
+            Action driveToZone = drive.actionBuilder(getPose)
+                    .lineToX(EnterShootingZone.position.x)
+                    .lineToY(EnterShootingZone.position.y)
+                    .build();
+            Actions.runBlocking(new ParallelAction(driveToZone));
+        }
+        if (gamepad1.dpad_left) {
+            Pose2d EnterLoadingZone = new Pose2d(RobotStatic.BlueLoadingZone[0], RobotStatic.BlueLoadingZone[1], Heading);
+
+            Action driveToZone = drive.actionBuilder(getPose)
+                    .lineToX(EnterLoadingZone.position.x)
+                    .lineToY(EnterLoadingZone.position.y)
+                    .build();
+            Actions.runBlocking(new ParallelAction(driveToZone));
+        }
+        if (gamepad1.dpad_right) {
+            Pose2d EnterLoadingZone = new Pose2d(RobotStatic.RedLoadingZone[0], RobotStatic.RedLoadingZone[1], Heading);
+
+            Action driveToZone = drive.actionBuilder(getPose)
+                    .lineToX(EnterLoadingZone.position.x)
+                    .lineToY(EnterLoadingZone.position.y)
+                    .build();
+            Actions.runBlocking(new ParallelAction(driveToZone));
+        }
 
         telemetry.addLine("========== ROBOT STATE ==========");
         telemetry.addData("State", currentState);
@@ -171,6 +192,7 @@ public class TeleopRoadRunner extends OpMode {
         telemetry.addData("Purple", PurpleColor);
         telemetry.addData("Green", GreenColor);
         telemetry.addData("Unknown", UnknownColor);
+        telemetry.addLine("========== HELPER ==========");
         telemetry.update();
     }
 
@@ -193,6 +215,7 @@ public class TeleopRoadRunner extends OpMode {
 
                case INTAKE:
                    Intake.setPower(RobotStatic.INTAKE_SPEED);
+                   StooperTime.reset();
                    currentState = TriangleState.OPEN_GATE;
 
                case OPEN_GATE:

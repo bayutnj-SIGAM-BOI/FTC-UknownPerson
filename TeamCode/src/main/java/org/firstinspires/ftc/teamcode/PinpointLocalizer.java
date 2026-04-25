@@ -15,31 +15,40 @@ import java.util.Objects;
 
 @Config
 public final class PinpointLocalizer implements Localizer {
+
     public static class Params {
-        public double parYTicks = 0.0; // y position of the parallel encoder (in tick units)
-        public double perpXTicks = 0.0; // x position of the perpendicular encoder (in tick units)
+        public double parXTicks = 0.0;   // parallel encoder (forward → X)
+        public double perpYTicks = 0.0;  // perpendicular encoder (strafe → Y)
     }
 
     public static Params PARAMS = new Params();
 
     public final GoBildaPinpointDriver driver;
-    public final GoBildaPinpointDriver.EncoderDirection initialParDirection, initialPerpDirection;
+    public final GoBildaPinpointDriver.EncoderDirection initialParDirection;
+    public final GoBildaPinpointDriver.EncoderDirection initialPerpDirection;
 
     private Pose2d txWorldPinpoint;
     private Pose2d txPinpointRobot = new Pose2d(0, 0, 0);
 
     public PinpointLocalizer(HardwareMap hardwareMap, double inPerTick, Pose2d initialPose) {
-        // TODO: make sure your config has a Pinpoint device with this name
-        //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
+
         driver = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
 
-//        Inch to mm
+        // inch → mm
         double mmPerTick = inPerTick * 25.4;
-        driver.setEncoderResolution(1 / mmPerTick, DistanceUnit.MM);
-        driver.setOffsets(mmPerTick * PARAMS.parYTicks, mmPerTick * PARAMS.perpXTicks, DistanceUnit.MM);
 
-        // TODO: reverse encoder directions if needed
-        initialParDirection = GoBildaPinpointDriver.EncoderDirection.FORWARD;
+        // resolution
+        driver.setEncoderResolution(1 / mmPerTick, DistanceUnit.MM);
+
+        // ✅ FIX: offset sesuai axis (X forward, Y strafe)
+        driver.setOffsets(
+                mmPerTick * PARAMS.parXTicks,
+                mmPerTick * PARAMS.perpYTicks,
+                DistanceUnit.MM
+        );
+
+        // arah encoder (ubah kalau kebalik)
+        initialParDirection = GoBildaPinpointDriver.EncoderDirection.REVERSED;
         initialPerpDirection = GoBildaPinpointDriver.EncoderDirection.FORWARD;
 
         driver.setEncoderDirections(initialParDirection, initialPerpDirection);
@@ -62,13 +71,34 @@ public final class PinpointLocalizer implements Localizer {
     @Override
     public PoseVelocity2d update() {
         driver.update();
-        if (Objects.requireNonNull(driver.getDeviceStatus()) == GoBildaPinpointDriver.DeviceStatus.READY) {
-            txPinpointRobot = new Pose2d(driver.getPosX(DistanceUnit.INCH), driver.getPosY(DistanceUnit.INCH), driver.getHeading(UnnormalizedAngleUnit.RADIANS));
-            Vector2d worldVelocity = new Vector2d(driver.getVelX(DistanceUnit.INCH), driver.getVelY(DistanceUnit.INCH));
-            Vector2d robotVelocity = Rotation2d.fromDouble(-txPinpointRobot.heading.log()).times(worldVelocity);
 
-            return new PoseVelocity2d(robotVelocity, driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
+        if (Objects.requireNonNull(driver.getDeviceStatus()) ==
+                GoBildaPinpointDriver.DeviceStatus.READY) {
+
+            // posisi dari Pinpoint
+            txPinpointRobot = new Pose2d(
+                    driver.getPosX(DistanceUnit.INCH),
+                    driver.getPosY(DistanceUnit.INCH),
+                    driver.getHeading(UnnormalizedAngleUnit.RADIANS)
+            );
+
+            // velocity world frame
+            Vector2d worldVelocity = new Vector2d(
+                    driver.getVelX(DistanceUnit.INCH),
+                    driver.getVelY(DistanceUnit.INCH)
+            );
+
+            // convert ke robot frame
+            Vector2d robotVelocity =
+                    Rotation2d.fromDouble(-txPinpointRobot.heading.log())
+                            .times(worldVelocity);
+
+            return new PoseVelocity2d(
+                    robotVelocity,
+                    driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS)
+            );
         }
+
         return new PoseVelocity2d(new Vector2d(0, 0), 0);
     }
 }

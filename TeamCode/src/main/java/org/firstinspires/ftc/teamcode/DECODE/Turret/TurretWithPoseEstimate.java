@@ -31,6 +31,7 @@ public class TurretWithPoseEstimate {
 
     private final double maxLimit = 90;
     private final double MinLimit = -120;
+    private double turretError = 0.0;
 
     public TurretWithPoseEstimate(HardwareMap hardwareMap) {
         spinTurret = hardwareMap.get(DcMotorEx.class, "spinTurret");
@@ -62,8 +63,13 @@ public class TurretWithPoseEstimate {
         turret = Range.clip(turret, MinLimit, maxLimit);
         double error = angleWrapDegree(turret - currentDeg);
         error = Range.clip(error, -turretLimitDeg, turretLimitDeg);
+        turretError = error;
 
         spinTurret.setPower(Range.clip(calculatePID(error), -1, 1));
+    }
+
+    public boolean isAimed() {
+        return Math.abs(turretError) < 3.0;
     }
 
     private double calculatePID(double error) {

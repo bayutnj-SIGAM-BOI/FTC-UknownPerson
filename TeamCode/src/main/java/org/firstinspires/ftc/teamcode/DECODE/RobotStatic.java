@@ -2,25 +2,32 @@ package org.firstinspires.ftc.teamcode.DECODE;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.qualcomm.robotcore.util.Range;
 
 @Config
 public class RobotStatic {
     public static Pose2d blueAimingTarget = new Pose2d(-57.1, -55.3, 0);
     public static Pose2d redAimingTarget = new Pose2d(-blueAimingTarget.position.x, -blueAimingTarget.position.y, 0);
     public static double[] HoodedAngle = {0.0 ,0.9};
+    public static double nearDistance = 32;
+    public static double farDistance = 144 ;
     public static double OPEN_GATE = 0.5;
     public static double CLOSE_GATE = 0.9;
     public static double INTAKE_SPEED = 1.0;
     public static double TURRET_OFFSET_X = 0.0;
     public static double TURRET_OFFSET_Y = 0.0;
-    public static double[] TRIANGLE_X = {-55.3, 0, -55.3};
-    public static double[] TRIANGLE_Y = {-55.0, 0, 55.0};
-    public static double[] TRIANGLE_XS = {};
-    public static double[] TRIANGLE_YS = {};
-    public static double MIN_ZONE_X = 0;
-    public static double MAX_ZONE_X = 144;
-    public static double MIN_ZONE_Y = 0;
-    public static double MAX_ZONE_Y = 144;
+    public static double[] TRIANGLE_X = {-55.3, -0.4, -55.3};
+    public static double[] TRIANGLE_Y = {-55.0, -0.2, 55.0};
+    public static double[] TRIANGLE_XS = {68.9, 46.4, 68.9};
+    public static double[] TRIANGLE_YS = {-22.7, 0.0, 22.4};
+    public static double MIN_ZONE_X = -72;
+    public static double MAX_ZONE_X = 72;
+    public static double MIN_ZONE_Y = -72;
+    public static double MAX_ZONE_Y = 72;
+
+//    First index is X and second is Y
+    public static double[] RedLoadingZone = {57.5, 58.5};
+    public static double[] BlueLoadingZone = {57.5, -58.5};
 
     public double EveryWhereShooInterpolation(double pos) {
         double[][] dataPoints = {
@@ -69,14 +76,9 @@ public class RobotStatic {
     }
 
     public double AngleAdjuster(double pos) {
-        if (pos >= 135) {
-            return HoodedAngle[2];
-        } else if(pos <= 135) {
-            return HoodedAngle[0];
-        } else {
-            double t = (pos - HoodedAngle[0]) / (HoodedAngle[0] - HoodedAngle[2]);
-            return HoodedAngle[0] + (HoodedAngle[2] - HoodedAngle[0]) * t;
-        }
+        double t = (pos - nearDistance) / (farDistance - nearDistance);
+        t = Range.clip(t, 0 , 1);
+        return HoodedAngle[0] + (HoodedAngle[1] - HoodedAngle[0]) * t;
     }
 
     public double pivotX(double robotX, double robotHeading) {
