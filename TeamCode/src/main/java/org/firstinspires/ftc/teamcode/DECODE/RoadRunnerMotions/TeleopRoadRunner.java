@@ -12,12 +12,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.robot.Robot;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DECODE.ColorSensor.NormalizeColorSensor;
 import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.DECODE.ableToShootTriangle;
@@ -49,7 +45,7 @@ public class TeleopRoadRunner extends OpMode {
 
     private Pose2d beginPose = RobotStatic.blueBeginPose;
     private boolean redAlliance = false;
-    private boolean blueAliiance = true;
+    private boolean blueAlliance = true;
 
     @Override
     public void init() {
@@ -74,7 +70,7 @@ public class TeleopRoadRunner extends OpMode {
     @Override
     public void init_loop() {
         if (gamepad1.x) {
-            blueAliiance = true;
+            blueAlliance = true;
             beginPose = RobotStatic.blueBeginPose;
             target = RobotStatic.blueAimingTarget;
             gamepad1.setLedColor(0, 0, 1, 100);
@@ -87,7 +83,7 @@ public class TeleopRoadRunner extends OpMode {
             gamepad1.setLedColor(1, 0, 0, 100);
             telemetry.addData("Alliance", "Red Selected");
         }
-        telemetry.addData("Current Alliance", blueAliiance ? "Blue" : "Red");
+        telemetry.addData("Current Alliance", blueAlliance ? "Blue" : "Red");
         telemetry.update();
     }
 
@@ -206,7 +202,6 @@ public class TeleopRoadRunner extends OpMode {
         telemetry.addData("Purple", PurpleColor);
         telemetry.addData("Green", GreenColor);
         telemetry.addData("Unknown", UnknownColor);
-        telemetry.addLine("========== HELPER ==========");
         telemetry.update();
     }
 
