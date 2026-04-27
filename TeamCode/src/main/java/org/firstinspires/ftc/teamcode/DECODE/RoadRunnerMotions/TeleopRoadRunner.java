@@ -3,9 +3,7 @@ package org.firstinspires.ftc.teamcode.DECODE.RoadRunnerMotions;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.Pose2dDual;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
-import com.acmerobotics.roadrunner.PoseVelocity2dDual;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -14,11 +12,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.robot.Robot;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.sun.tools.javac.comp.Enter;
 
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DECODE.ColorSensor.NormalizeColorSensor;
 import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.DECODE.ableToShootTriangle;
@@ -83,7 +78,6 @@ public class TeleopRoadRunner extends OpMode {
         double RobotX = getPose.position.x;
         double RobotY = getPose.position.y;
         double Heading = getPose.heading.toDouble();
-
         double distanceTarget = Math.hypot(RobotX - target.position.x, RobotY - target.position.y);
 
         double slowModeSpeed = (gamepad1.right_trigger > 0.4) ? 0.4 : 1.0;
@@ -207,8 +201,8 @@ public class TeleopRoadRunner extends OpMode {
                    currentState = TriangleState.SHOOTING;
 
                case SHOOTING:
-                   Shooter.setVelocity(rC.EveryWhereShooInterpolation(distanceTarget));
-                   if (Math.abs(Shooter.getVelocity() - rC.EveryWhereShooInterpolation(distanceTarget)) < 50.0) {
+                   Shooter.setVelocity(rC.InterpolationShooter(distanceTarget));
+                   if (Math.abs(Shooter.getVelocity() - rC.InterpolationShooter(distanceTarget)) < 50.0) {
                        currentState = TriangleState.INTAKE;
                    }
                    break;

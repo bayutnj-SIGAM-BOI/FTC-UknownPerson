@@ -29,7 +29,17 @@ public class RobotStatic {
     public static double[] RedLoadingZone = {57.5, 58.5};
     public static double[] BlueLoadingZone = {57.5, -58.5};
 
-    public double EveryWhereShooInterpolation(double pos) {
+    public double PolynomialShooter(double d) {
+        double a = 1446.51452;
+        double b = 1.00284;
+
+        double power = a * Math.pow(b, d);
+        if (power < 1500) power = 1500;
+        if (power > 3000) power = 3000;
+
+        return power;
+    }
+    public double InterpolationShooter(double pos) {
         double[][] dataPoints = {
                 {27.26, 1220},
                 {33.24, 1240},

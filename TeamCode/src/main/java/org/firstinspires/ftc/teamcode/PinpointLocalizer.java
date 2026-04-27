@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
-import com.acmerobotics.roadrunner.Rotation2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -15,40 +14,34 @@ import java.util.Objects;
 
 @Config
 public final class PinpointLocalizer implements Localizer {
-
     public static class Params {
-        public double parXTicks = 0.0;   // parallel encoder (forward → X)
-        public double perpYTicks = 0.0;  // perpendicular encoder (strafe → Y)
+        public double parYTicks = 0.0;  // posisi encoder parallel (kiri/kanan dari tengah robot, dalam ticks)
+        public double perpXTicks = 0.0; // posisi encoder perpendicular (depan/belakang dari tengah robot, dalam ticks)
     }
 
     public static Params PARAMS = new Params();
 
     public final GoBildaPinpointDriver driver;
-    public final GoBildaPinpointDriver.EncoderDirection initialParDirection;
-    public final GoBildaPinpointDriver.EncoderDirection initialPerpDirection;
+    public final GoBildaPinpointDriver.EncoderDirection initialParDirection, initialPerpDirection;
 
     private Pose2d txWorldPinpoint;
     private Pose2d txPinpointRobot = new Pose2d(0, 0, 0);
 
     public PinpointLocalizer(HardwareMap hardwareMap, double inPerTick, Pose2d initialPose) {
+        driver = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
-        driver = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
-
-        // inch → mm
         double mmPerTick = inPerTick * 25.4;
 
-        // resolution
-        driver.setEncoderResolution(1 / mmPerTick, DistanceUnit.MM);
+        driver.setEncoderResolution(mmPerTick, DistanceUnit.MM);
 
-        // ✅ FIX: offset sesuai axis (X forward, Y strafe)
         driver.setOffsets(
-                mmPerTick * PARAMS.parXTicks,
-                mmPerTick * PARAMS.perpYTicks,
+                mmPerTick * PARAMS.perpXTicks,
+                mmPerTick * PARAMS.parYTicks,
                 DistanceUnit.MM
         );
 
-        // arah encoder (ubah kalau kebalik)
-        initialParDirection = GoBildaPinpointDriver.EncoderDirection.REVERSED;
+        // TODO: reverse encoder directions if needed
+        initialParDirection = GoBildaPinpointDriver.EncoderDirection.FORWARD;
         initialPerpDirection = GoBildaPinpointDriver.EncoderDirection.FORWARD;
 
         driver.setEncoderDirections(initialParDirection, initialPerpDirection);
@@ -75,23 +68,18 @@ public final class PinpointLocalizer implements Localizer {
         if (Objects.requireNonNull(driver.getDeviceStatus()) ==
                 GoBildaPinpointDriver.DeviceStatus.READY) {
 
-            // posisi dari Pinpoint
             txPinpointRobot = new Pose2d(
                     driver.getPosX(DistanceUnit.INCH),
                     driver.getPosY(DistanceUnit.INCH),
                     driver.getHeading(UnnormalizedAngleUnit.RADIANS)
             );
 
-            // velocity world frame
             Vector2d worldVelocity = new Vector2d(
                     driver.getVelX(DistanceUnit.INCH),
                     driver.getVelY(DistanceUnit.INCH)
             );
 
-            // convert ke robot frame
-            Vector2d robotVelocity =
-                    Rotation2d.fromDouble(-txPinpointRobot.heading.log())
-                            .times(worldVelocity);
+            Vector2d robotVelocity = getPose().heading.inverse().times(worldVelocity);
 
             return new PoseVelocity2d(
                     robotVelocity,
