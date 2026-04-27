@@ -12,8 +12,12 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.robot.Robot;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DECODE.ColorSensor.NormalizeColorSensor;
 import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.DECODE.ableToShootTriangle;
@@ -43,10 +47,12 @@ public class TeleopRoadRunner extends OpMode {
     private TriangleState currentState = TriangleState.IDLE;
     private final ElapsedTime StooperTime = new ElapsedTime();
 
+    private Pose2d beginPose = RobotStatic.blueBeginPose;
+    private boolean redAlliance = false;
+    private boolean blueAliiance = true;
+
     @Override
     public void init() {
-        Pose2d beginPose = new Pose2d(0, 0, 0);
-        drive = new TankDrive(hardwareMap, beginPose);
         turret = new TurretWithPoseEstimate(hardwareMap);
 
         angleAdjuster = hardwareMap.get(Servo.class, "angleAdjuster");
@@ -66,7 +72,28 @@ public class TeleopRoadRunner extends OpMode {
     }
 
     @Override
+    public void init_loop() {
+        if (gamepad1.x) {
+            blueAliiance = true;
+            beginPose = RobotStatic.blueBeginPose;
+            target = RobotStatic.blueAimingTarget;
+            gamepad1.setLedColor(0, 0, 1, 100);
+            telemetry.addData("Alliance", "Blue Selected");
+        }
+        if (gamepad1.b) {
+            redAlliance = true;
+            beginPose = RobotStatic.redBeginPose;
+            target = RobotStatic.blueAimingTarget;
+            gamepad1.setLedColor(1, 0, 0, 100);
+            telemetry.addData("Alliance", "Red Selected");
+        }
+        telemetry.addData("Current Alliance", blueAliiance ? "Blue" : "Red");
+        telemetry.update();
+    }
+
+    @Override
     public void start() {
+        drive = new TankDrive(hardwareMap, beginPose);
         StooperTime.reset();
         currentState = TriangleState.IDLE;
     }
@@ -85,14 +112,7 @@ public class TeleopRoadRunner extends OpMode {
         double Forward = gamepad1.left_stick_y;
         drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward * slowModeSpeed, 0), Rotate * slowModeSpeed));
 
-//        ========== Tracking Poses turret ==========
-        if (gamepad1.left_bumper) {
-                target = RobotStatic.blueAimingTarget;
-                gamepad1.setLedColor(0, 0, 1, 100);
-            } else if (gamepad1.right_bumper) {
-                target = RobotStatic.redAimingTarget;
-                gamepad1.setLedColor(1, 0, 0, 100);
-            }
+//    Turret aiming target get from the init loop
         turret.aimingTurret(target, RobotX, RobotY, Heading);
 
         if (turret.isAimed()) {

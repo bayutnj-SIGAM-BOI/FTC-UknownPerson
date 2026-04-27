@@ -4,10 +4,14 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.util.Range;
 
+
+
 @Config
 public class RobotStatic {
     public static Pose2d blueAimingTarget = new Pose2d(-57.1, -55.3, 0);
     public static Pose2d redAimingTarget = new Pose2d(-blueAimingTarget.position.x, -blueAimingTarget.position.y, 0);
+    public static Pose2d blueBeginPose = new Pose2d(-28.0, -28.2, 0);
+    public static Pose2d redBeginPose = new Pose2d(-blueBeginPose.position.x, -blueBeginPose.position.y, 0);
     public static double[] HoodedAngle = {0.0 ,0.9};
     public static double nearDistance = 32;
     public static double farDistance = 144 ;
