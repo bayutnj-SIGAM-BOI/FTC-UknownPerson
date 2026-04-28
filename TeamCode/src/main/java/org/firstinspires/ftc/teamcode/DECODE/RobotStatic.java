@@ -4,8 +4,6 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.util.Range;
 
-
-
 @Config
 public class RobotStatic {
     public static Pose2d blueAimingTarget = new Pose2d(-57.1, -55.3, 0);
@@ -32,6 +30,10 @@ public class RobotStatic {
 //    First index is X and second is Y
     public static double[] RedLoadingZone = {57.5, 58.5};
     public static double[] BlueLoadingZone = {57.5, -58.5};
+
+    public static double HeadingKp = 0.0;
+    public static double HeadingKi = 0.0;
+    public static double HeadingKd = 0.0;
 
     public double PolynomialShooter(double d) {
 //        Coefficient. The data got from the desmos.

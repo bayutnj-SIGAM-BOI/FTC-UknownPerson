@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.DECODE.RoadRunnerMotions;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
@@ -14,6 +17,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.DECODE.HeadingPIDController;
 import org.firstinspires.ftc.teamcode.DECODE.ColorSensor.NormalizeColorSensor;
 import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.DECODE.ableToShootTriangle;
@@ -23,11 +27,14 @@ import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
 @TeleOp
 public class TeleopRoadRunner extends OpMode {
     private TankDrive drive;
+    private FtcDashboard ftcDashboard = FtcDashboard.getInstance();
     private TurretWithPoseEstimate turret;
     private final RobotStatic rC = new RobotStatic();
     private final ableToShootTriangle trig = new ableToShootTriangle();
+    private final HeadingPIDController pidController = new HeadingPIDController(RobotStatic.HeadingKp, RobotStatic.HeadingKi, RobotStatic.HeadingKd);
     NormalizeColorSensor backTop, backDown, frontSide;
     NormalizeColorSensor.detectColors backTopColor, backDownColor, frontSideColor;
+
     private Servo angleAdjuster, stooperGate;
     private DcMotorEx Shooter, Intake;
     private Pose2d target = RobotStatic.blueAimingTarget;
@@ -46,6 +53,10 @@ public class TeleopRoadRunner extends OpMode {
     private Pose2d beginPose = RobotStatic.blueBeginPose;
     private boolean redAlliance = false;
     private boolean blueAlliance = true;
+
+//    End game
+    double endGameStart;
+    boolean isEndGame;
 
     @Override
     public void init() {
@@ -71,6 +82,7 @@ public class TeleopRoadRunner extends OpMode {
     public void init_loop() {
         if (gamepad1.x) {
             blueAlliance = true;
+            redAlliance = false;
             beginPose = RobotStatic.blueBeginPose;
             target = RobotStatic.blueAimingTarget;
             gamepad1.setLedColor(0, 0, 1, 100);
@@ -78,6 +90,7 @@ public class TeleopRoadRunner extends OpMode {
         }
         if (gamepad1.b) {
             redAlliance = true;
+            blueAlliance = false;
             beginPose = RobotStatic.redBeginPose;
             target = RobotStatic.redAimingTarget;
             gamepad1.setLedColor(1, 0, 0, 100);
@@ -90,6 +103,7 @@ public class TeleopRoadRunner extends OpMode {
     @Override
     public void start() {
         drive = new TankDrive(hardwareMap, beginPose);
+        endGameStart = getRuntime() + 90;
         StooperTime.reset();
         currentState = TriangleState.IDLE;
     }
@@ -106,19 +120,21 @@ public class TeleopRoadRunner extends OpMode {
         double slowModeSpeed = (gamepad1.right_trigger > 0.4) ? 0.4 : 1.0;
         double Rotate = -gamepad1.right_stick_x;
         double Forward = gamepad1.left_stick_y;
+        if (gamepad1.y) {
+            Rotate = pidController.calculateDegree(90, Heading);
+        } else if (gamepad1.x) {
+            Rotate = pidController.calculateDegree(180, Heading);
+        }
         drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward * slowModeSpeed, 0), Rotate * slowModeSpeed));
+        //        Auto Angle Positioning
+
+        endGameCheck();
 
 //    Turret aiming target get from the init loop
         turret.aimingTurret(target, RobotX, RobotY, Heading);
-
         if (turret.isAimed()) {
             gamepad1.setLedColor(0, 1, 0, -1);
         }
-
-//        ========== Manually system ==========
-        if (gamepad1.left_trigger > 0.1) { Intake.setPower(RobotStatic.INTAKE_SPEED);
-            } else { Intake.setPower(0); }
-        if (gamepad1.a) { Intake.setPower(0); }
 
 //        Color sensor Declaration
         backTopColor = backTop.getDetectedColor(telemetry);
@@ -138,7 +154,15 @@ public class TeleopRoadRunner extends OpMode {
                     frontSideColor == NormalizeColorSensor.detectColors.UNKNOWN;
 
 //        Auto Intake if no artifact
-        if (!PurpleColor && !GreenColor && !UnknownColor) { Intake.setPower(1);}
+        if (gamepad1.left_trigger > 0.1) {
+            Intake.setPower(RobotStatic.INTAKE_SPEED);
+        } else if (gamepad1.a) {
+            Intake.setPower(0);
+        } else if (!GreenColor && !PurpleColor && UnknownColor) {
+            Intake.setPower(RobotStatic.INTAKE_SPEED);
+        } else {
+            Intake.setPower(0);
+        }
 //        Rumble when Gate is Open
         if (currentState == TriangleState.OPEN_GATE) { gamepad1.rumble(1.0, 1.0, 300);}
 
@@ -188,6 +212,8 @@ public class TeleopRoadRunner extends OpMode {
             Actions.runBlocking(new ParallelAction(driveToZone));
         }
 
+//        Telemetries
+        sendDashboard(RobotX, RobotY, distanceTarget, Heading, PurpleColor, GreenColor, UnknownColor);
         telemetry.addLine("========== ROBOT STATE ==========");
         telemetry.addData("State", currentState);
         telemetry.addData("Pose", getPose);
@@ -203,6 +229,13 @@ public class TeleopRoadRunner extends OpMode {
         telemetry.addData("Green", GreenColor);
         telemetry.addData("Unknown", UnknownColor);
         telemetry.update();
+    }
+
+    private void endGameCheck() {
+        if (endGameStart >= getRuntime() && !isEndGame) {
+            gamepad1.rumbleBlips(3);
+            isEndGame = true;
+        }
     }
 
     private void updateShooterSub(double RobotX, double RobotY, double distanceTarget, boolean PurpleColor, boolean GreenColor, boolean Unknown) {
@@ -240,5 +273,32 @@ public class TeleopRoadRunner extends OpMode {
            Shooter.setVelocity(0);
            stooperGate.setPosition(RobotStatic.CLOSE_GATE);
        }
+    }
+
+    private void sendDashboard(double RobotX, double RobotY, double Dist, double Heading, boolean purpleColor, boolean greenColor, boolean unknownColor) {
+        TelemetryPacket tpacket = new TelemetryPacket();
+        Canvas c = tpacket.fieldOverlay();
+
+        c.setFill("#FFCC00");
+        c.fillCircle(target.position.x, target.position.y, 5);
+
+        c.setStroke(turret.isAimed() ? "2FA084" : "#FFA500");
+        c.setStrokeWidth(1);
+        c.strokeLine(RobotX, RobotY, target.position.x, target.position.y);
+
+        c.setFill(blueAlliance ? "#3366FF" : "#FF3333");
+        c.fillCircle(RobotX, RobotY, 10);
+
+        tpacket.addLine("====== ROBOT POSITIONING ======");
+        tpacket.put("Robot X", RobotX);
+        tpacket.put("Robot Y", RobotY);
+        tpacket.put("Heading", Heading);
+        tpacket.put("Distance", Dist);
+        tpacket.addLine("====== COLOR SENSOR ======");
+        tpacket.put("PURPLE", purpleColor);
+        tpacket.put("GREEN", greenColor);
+        tpacket.put("UNKNOWN COLOR", unknownColor);
+
+        ftcDashboard.sendTelemetryPacket(tpacket);
     }
 }

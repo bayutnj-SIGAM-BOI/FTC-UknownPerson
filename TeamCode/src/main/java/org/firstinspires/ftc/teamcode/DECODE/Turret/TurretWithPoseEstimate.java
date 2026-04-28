@@ -28,7 +28,6 @@ public class TurretWithPoseEstimate {
     public static double kI = 0.001;
 
     public static double kD = 0.003;
-
     private final double maxLimit = 90;
     private final double MinLimit = -120;
     private double turretError = 0.0;
