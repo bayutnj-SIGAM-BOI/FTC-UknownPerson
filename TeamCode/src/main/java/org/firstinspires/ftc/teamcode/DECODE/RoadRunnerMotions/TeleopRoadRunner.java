@@ -79,7 +79,7 @@ public class TeleopRoadRunner extends OpMode {
         if (gamepad1.b) {
             redAlliance = true;
             beginPose = RobotStatic.redBeginPose;
-            target = RobotStatic.blueAimingTarget;
+            target = RobotStatic.redAimingTarget;
             gamepad1.setLedColor(1, 0, 0, 100);
             telemetry.addData("Alliance", "Red Selected");
         }
