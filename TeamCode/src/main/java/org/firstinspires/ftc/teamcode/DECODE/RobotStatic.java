@@ -34,6 +34,7 @@ public class RobotStatic {
     public static double[] BlueLoadingZone = {57.5, -58.5};
 
     public double PolynomialShooter(double d) {
+//        Coefficient. The data got from the desmos.
         double a = 1446.51452;
         double b = 1.00284;
 
