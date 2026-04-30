@@ -77,7 +77,7 @@ public class Act {
                 Shooter.setVelocity(0);
                 initialize = true;
             }
-            rc.EveryWhereShooInterpolation(pos);
+            rc.InterpolationShooter(pos);
             return false;
         }
     }

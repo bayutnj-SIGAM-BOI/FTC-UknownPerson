@@ -19,6 +19,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.DECODE.HeadingPIDController;
 import org.firstinspires.ftc.teamcode.DECODE.ColorSensor.NormalizeColorSensor;
+import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.DECODE.ableToShootTriangle;
 import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
@@ -26,7 +27,7 @@ import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
 
 @TeleOp
 public class TeleopRoadRunner extends OpMode {
-    private TankDrive drive;
+    private MecanumDrive drive;
     private FtcDashboard ftcDashboard = FtcDashboard.getInstance();
     private TurretWithPoseEstimate turret;
     private final RobotStatic rC = new RobotStatic();
@@ -102,7 +103,7 @@ public class TeleopRoadRunner extends OpMode {
 
     @Override
     public void start() {
-        drive = new TankDrive(hardwareMap, beginPose);
+        drive = new MecanumDrive(hardwareMap, beginPose);
         endGameStart = getRuntime() + 90;
         StooperTime.reset();
         currentState = TriangleState.IDLE;
@@ -120,12 +121,13 @@ public class TeleopRoadRunner extends OpMode {
         double slowModeSpeed = (gamepad1.right_trigger > 0.4) ? 0.4 : 1.0;
         double Rotate = -gamepad1.right_stick_x;
         double Forward = gamepad1.left_stick_y;
+        double Strafe = gamepad1.left_stick_x;
         if (gamepad1.y) {
             Rotate = pidController.calculateDegree(90, Heading);
         } else if (gamepad1.x) {
             Rotate = pidController.calculateDegree(180, Heading);
         }
-        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward * slowModeSpeed, 0), Rotate * slowModeSpeed));
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(Forward * slowModeSpeed, Strafe), Rotate * slowModeSpeed));
         //        Auto Angle Positioning
 
         endGameCheck();

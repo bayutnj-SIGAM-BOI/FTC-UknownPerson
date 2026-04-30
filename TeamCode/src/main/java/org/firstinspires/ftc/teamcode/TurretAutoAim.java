@@ -148,7 +148,7 @@ public class TurretAutoAim extends OpMode {
         boolean yPressed = gamepad1.y;
         if (yPressed && !lastY) {
             shoot = !shoot;
-            Shooter.setVelocity(shoot ? rC.EveryWhereShooInterpolation(distanceToTarget) : 0);
+            Shooter.setVelocity(shoot ? rC.InterpolationShooter(distanceToTarget) : 0);
         }
         lastY = yPressed;
 
