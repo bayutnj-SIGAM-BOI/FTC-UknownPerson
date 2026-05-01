@@ -4,6 +4,10 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.util.Range;
 
+import org.opencv.core.Mat;
+
+import kotlin.math.MathKt;
+
 @Config
 public class RobotStatic {
     public static Pose2d blueAimingTarget = new Pose2d(-57.1, -55.3, 0);
@@ -31,14 +35,14 @@ public class RobotStatic {
     public static double[] RedLoadingZone = {57.5, 58.5};
     public static double[] BlueLoadingZone = {57.5, -58.5};
 
-    public static double HeadingKp = 0.0;
+    public static double HeadingKp = 2;
     public static double HeadingKi = 0.0;
     public static double HeadingKd = 0.0;
 
     public double PolynomialShooter(double d) {
 //        Coefficient. The data got from the desmos.
-        double a = 1446.51452;
-        double b = 1.00284;
+        double a = 1445.96132;
+        double b = 1.0029;
 
         double power = a * Math.pow(b, d);
         if (power < 1500) power = 1500;
@@ -46,6 +50,15 @@ public class RobotStatic {
 
         return power;
     }
+
+    public double flywheelSpeed(double dist) {
+        double power = 0.00000410854 * Math.pow(dist, 4) + -0.00143996 * Math.pow(dist, 3)
+                + 0.157152 * Math.pow(dist, 2) + -0.107505 + dist + 1438.97499;
+        if (power < 0) power = 0;
+        if (power > 2150) power = 2150;
+        return power;
+    }
+
     public double InterpolationShooter(double pos) {
         double[][] dataPoints = {
                 {27.26, 1220},
@@ -96,6 +109,13 @@ public class RobotStatic {
         double t = (pos - nearDistance) / (farDistance - nearDistance);
         t = Range.clip(t, 0 , 1);
         return HoodedAngle[0] + (HoodedAngle[1] - HoodedAngle[0]) * t;
+    }
+    public double hoodAngle(double dis) {
+        double hood = -4.74322e-8 * Math.pow(dis, 3) + -0.0000382626 * Math.pow(dis, 2)
+                + 0.015535 * dis + -0.359574;
+        if (hood < 0) hood = 0;
+        if (hood > 0.95) hood = 0.95;
+        return hood;
     }
 
     public double pivotX(double robotX, double robotHeading) {

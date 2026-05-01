@@ -25,7 +25,7 @@ import org.firstinspires.ftc.teamcode.DECODE.ableToShootTriangle;
 import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
 import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
 
-@TeleOp
+@TeleOp(name = "Istanbul Teleop")
 public class TeleopRoadRunner extends OpMode {
     private MecanumDrive drive;
     private FtcDashboard ftcDashboard = FtcDashboard.getInstance();
