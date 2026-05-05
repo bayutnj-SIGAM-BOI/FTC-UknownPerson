@@ -16,7 +16,7 @@ public class TurretWithPoseEstimate {
     final RobotStatic rC = new RobotStatic();
     DcMotorEx spinTurret;
     ElapsedTime spinTimer = new ElapsedTime();
-    private final double TICKS_PER_REV = ((((1.0 + (46.0 / 17.0))) * (1.0 + (46.0 / 11.0))) * 28.0);
+    private final double TICKS_PER_REV = ((((1+(46/17))) * (1+(46/17))) * (1+(46/17)) * 28);
     private final double GearRatio = 100.0 / 20.0;
     private final double OutputSpeed = TICKS_PER_REV * GearRatio;
     final double TicksPerDegree = OutputSpeed / 360.0;
@@ -25,15 +25,15 @@ public class TurretWithPoseEstimate {
     private double lastError = 0;
     private final double integralLimit = 15.0;
     public static double kP = 0.05;
-    public static double kI = 0.001;
+    public static double kI = 0.002;
 
-    public static double kD = 0.003;
+    public static double kD = 0.005;
     private final double maxLimit = 90;
-    private final double MinLimit = -120;
+    private final double MinLimit = -190;
     private double turretError = 0.0;
 
     public TurretWithPoseEstimate(HardwareMap hardwareMap) {
-        spinTurret = hardwareMap.get(DcMotorEx.class, "spinTurret");
+        spinTurret = hardwareMap.get(DcMotorEx.class, "Turret");
         spinTurret.setDirection(DcMotorSimple.Direction.REVERSE);
         spinTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         spinTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -55,9 +55,9 @@ public class TurretWithPoseEstimate {
 
 //        Limit rotasinya
         if (currentDeg > maxLimit + 5) {
-            turret = MinLimit;
+            turret = -360;
         } else if (currentDeg < MinLimit - 5) {
-            turret = maxLimit;
+            turret = 360;
         }
         turret = Range.clip(turret, MinLimit, maxLimit);
         double error = angleWrapDegree(turret - currentDeg);

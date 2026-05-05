@@ -33,30 +33,42 @@ public class RetryNearBlueMec extends LinearOpMode {
         turret = new TurretWithPoseEstimate(hardwareMap);
         action = new Act(hardwareMap, telemetry);
 
-        waitForStart();
-        drive.localizer.update();
-        Pose2d getPose = drive.localizer.getPose();
-        double x = getPose.position.x;
-        double y = getPose.position.y;
-        double h = getPose.heading.toDouble();
-        double distanceTarget = Math.hypot(x - RobotStatic.blueAimingTarget.position.x, y - RobotStatic.blueAimingTarget.position.y);
-
 //        Subsystem
         Action turretTracking = telemetryPacket -> {
+            drive.localizer.update();
+            Pose2d getpose = drive.localizer.getPose();
+            double x = getpose.position.x;
+            double y = getpose.position.y;
+            double h = getpose.heading.toDouble();
             turret.aimingTurret(RobotStatic.blueAimingTarget, x, y, h);
             return true;
         };
 
-        Action Shooter = drive.actionBuilder(beginPose)
-                .stopAndAdd(action.shooterWheel(distanceTarget))
-                .build();
+       Action Shooter = telemetryPacket -> {
+           drive.localizer.update();
+           Pose2d getpose = drive.localizer.getPose();
+           double x = getpose.position.x;
+           double y = getpose.position.y;
+           double h = getpose.heading.toDouble();
+           double dist = Math.hypot(x - RobotStatic.blueAimingTarget.position.x, y - RobotStatic.blueAimingTarget.position.y);
+           action.shooterWheel(dist);
+           return true;
+       };
+
         Action servoGate = drive.actionBuilder(beginPose)
                 .stopAndAdd(action.setStooper(RobotStatic.OPEN_GATE))
                 .afterTime(1, action.setStooper(RobotStatic.CLOSE_GATE))
                 .build();
-        Action angleAdjusting = drive.actionBuilder(beginPose)
-                .stopAndAdd(action.autoAdjust(distanceTarget))
-                .build();
+        Action angleAdjusting = telemetryPacket -> {
+            drive.localizer.update();
+            Pose2d getpose = drive.localizer.getPose();
+            double x = getpose.position.x;
+            double y = getpose.position.y;
+            double h = getpose.heading.toDouble();
+            double dist = Math.hypot(x - RobotStatic.blueAimingTarget.position.x, y - RobotStatic.blueAimingTarget.position.y);
+            action.autoAdjust(dist);
+            return true;
+        };
 
 //        Drive base trajectory
         Action tab1 = drive.actionBuilder(beginPose)
@@ -97,6 +109,7 @@ public class RetryNearBlueMec extends LinearOpMode {
                 .strafeToConstantHeading(new Vector2d(-24.5, -9.2))
                 .build();
 
+        waitForStart();
         Actions.runBlocking(new ParallelAction(turretTracking, angleAdjusting, Shooter, new SequentialAction(tab1, servoGate, tab2, servoGate, tab3, servoGate, tab4, servoGate, tab5, servoGate, tab6, servoGate)));
 
         while(opModeIsActive()) {
