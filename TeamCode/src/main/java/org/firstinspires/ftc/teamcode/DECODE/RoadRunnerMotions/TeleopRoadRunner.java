@@ -17,10 +17,9 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.DECODE.HeadingPIDController;
+import org.firstinspires.ftc.teamcode.DECODE.PIDControl;
 import org.firstinspires.ftc.teamcode.DECODE.ColorSensor.NormalizeColorSensor;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
-import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.DECODE.ableToShootTriangle;
 import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
 import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
@@ -32,7 +31,7 @@ public class TeleopRoadRunner extends OpMode {
     private TurretWithPoseEstimate turret;
     private final RobotStatic rC = new RobotStatic();
     private final ableToShootTriangle trig = new ableToShootTriangle();
-    private final HeadingPIDController pidController = new HeadingPIDController(RobotStatic.HeadingKp, RobotStatic.HeadingKi, RobotStatic.HeadingKd);
+    private final PIDControl pidController = new PIDControl(RobotStatic.HeadingKp, RobotStatic.HeadingKi, RobotStatic.HeadingKd);
     NormalizeColorSensor backTop, backDown, frontSide;
     NormalizeColorSensor.detectColors backTopColor, backDownColor, frontSideColor;
 
