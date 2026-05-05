@@ -5,18 +5,16 @@ import static org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.I
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.DECODE.PIDControl;
 
 @com.acmerobotics.dashboard.config.Config
 public class Config {
@@ -24,11 +22,11 @@ public class Config {
     GoBildaPinpointDriver odo;
     private FtcDashboard ftcDashboard = FtcDashboard.getInstance();
     private PIDFCoefficients pidfCoefficients;
-    private HeadingPIDController armPID;
-    private HeadingPIDController straightPID;
-    private HeadingPIDController turnPID;
-    private HeadingPIDController strafePID;
-    private HeadingPIDController splinePID;
+    private PIDControl armPID;
+    private PIDControl straightPID;
+    private PIDControl turnPID;
+    private PIDControl strafePID;
+    private PIDControl splinePID;
     //    Drive base Configs
     DcMotor leftMotor, rightMotor = null;
     DcMotor leftBackMotor, rightBackMotor = null;
@@ -155,7 +153,7 @@ public class Config {
 
     public void armTo(int targetDegree) {
         if (!useArm || armMotor == null) return;
-        if (armPID == null) armPID = new HeadingPIDController(aKP, aKI, aKD);
+        if (armPID == null) armPID = new PIDControl(aKP, aKI, aKD);
         int currentArmPos = armMotor.getCurrentPosition();
         double currentDegree = (currentArmPos * 360.0) / ticks;
 
@@ -182,12 +180,12 @@ public class Config {
         boolean hasDrive = (leftMotor != null && rightMotor != null);
         if (!hasDrive) return true;
 
-        if (straightPID == null) straightPID = new HeadingPIDController(dKP, dKI, dKD);
+        if (straightPID == null) straightPID = new PIDControl(dKP, dKI, dKD);
         straightPID.kP = dKP;
         straightPID.kI = dKI;
         straightPID.kD = dKD;
 
-        if (turnPID == null) turnPID = new HeadingPIDController(tKP, tKI, tKD);
+        if (turnPID == null) turnPID = new PIDControl(tKP, tKI, tKD);
         turnPID.kP = tKP;
         turnPID.kI = tKI;
         turnPID.kD = tKD;

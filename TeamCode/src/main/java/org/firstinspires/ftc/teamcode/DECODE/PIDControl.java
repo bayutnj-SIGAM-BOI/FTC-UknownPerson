@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.DECODE;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-public class HeadingPIDController {
+public class PIDControl {
 
     public double kP, kI, kD;
 
@@ -29,7 +29,7 @@ public class HeadingPIDController {
 
     private static final double MIN_DT = 0.002; // 2ms floor — cegah infinity
 
-    public HeadingPIDController(double kP, double kI, double kD) {
+    public PIDControl(double kP, double kI, double kD) {
         this.kP = kP;
         this.kI = kI;
         this.kD = kD;

@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.DECODE.AutoWithOdo;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -16,11 +15,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.DECODE.HeadingPIDController;
+import org.firstinspires.ftc.teamcode.DECODE.PIDControl;
 import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
 import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
-
-import java.util.Calendar;
 
 
 @Config
@@ -36,9 +33,9 @@ public class Strategy1ODO extends OpMode {
     public static double pidYP = 0.15, pidYI, pidYD = 0.008;
     public static double pidHP = 0.8, pidHI = 0, pidHD = 0.002;
 
-    private HeadingPIDController pidX = new HeadingPIDController(pidXP, pidXI, pidXD);
-    private HeadingPIDController pidY = new HeadingPIDController(pidYP, pidYI, pidYD);
-    private HeadingPIDController pidH = new HeadingPIDController(pidHP, pidHI, pidHD);
+    private PIDControl pidX = new PIDControl(pidXP, pidXI, pidXD);
+    private PIDControl pidY = new PIDControl(pidYP, pidYI, pidYD);
+    private PIDControl pidH = new PIDControl(pidHP, pidHI, pidHD);
 
     private DcMotor leftFront, rearLeft, rightFront, rearRight;
 

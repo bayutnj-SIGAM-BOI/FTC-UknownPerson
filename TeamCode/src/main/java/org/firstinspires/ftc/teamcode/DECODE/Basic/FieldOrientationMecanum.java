@@ -13,13 +13,13 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.DECODE.HeadingPIDController;
+import org.firstinspires.ftc.teamcode.DECODE.PIDControl;
 import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
 import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
 
 @TeleOp(name = "EXHIBITION TELEOP", group = "EXHIBITION")
 public class FieldOrientationMecanum extends OpMode {
-    private HeadingPIDController pidControl = new HeadingPIDController(1, 0, 0.0008);
+    private PIDControl pidControl = new PIDControl(1, 0, 0.0008);
     private GoBildaPinpointDriver odo;
     private TurretWithPoseEstimate turret;
     private RobotStatic rc = new RobotStatic();
