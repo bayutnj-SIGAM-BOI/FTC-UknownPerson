@@ -32,7 +32,10 @@
         private final Pose2d StartPose = PosesStorage.currentPose;
         private boolean isBlueAiming = true, isRedAiming = false;
         private boolean autoheading = false;
-        double targetAngle;
+        private double targetAngle;
+
+        private boolean lastY = false;
+        private boolean isflyWheelOn = false;
 
         @Override
         public void init() {
@@ -105,15 +108,16 @@
             drive.setDrivePowers(new PoseVelocity2d(new Vector2d(rotX, rotY), rotate));
 
 //            SubSystem (Servos)
-
             if (gamepad1.a) { servos.setGate("open"); } else { servos.setGate("close"); }
             servos.setHoodAngle(disTarget);
 
 //            SubSystem (Turret && Shooter)
             turret.aimingTurret(snapTarget, xPose, yPose, hPose, xVel, yVel);
-            if (gamepad1.y && turret.isAimed()) { shooter.setFlyWheel(disTarget, "spins");} else if (!gamepad1.y && !turret.isAimed()) {
-                shooter.setFlyWheel(0, "stop");
-            }
+            if (gamepad1.y && !lastY && turret.isAimed()) { isflyWheelOn = !isflyWheelOn; }
+
+            if (isflyWheelOn) { shooter.setFlyWheel(disTarget, "spins"); }
+            else { shooter.setFlyWheel(0, "stop"); }
+            lastY = gamepad1.y;
 
 //            SubSytem (INTAKE)
             double glt = gamepad1.left_trigger;
@@ -126,18 +130,16 @@
             telemetry.addData("START POSE", StartPose);
             telemetry.addData("xPose", xPose);
             telemetry.addData("yPose", yPose);
-            telemetry.addData("HPose", Math.toDegrees(hPose));
+            telemetry.addData("hPose", Math.toDegrees(hPose));
 
-
-            telemetry.addLine("TURRET");
+            telemetry.addLine("SUBSYSTEM");
             telemetry.addData("SNAPPED TARGET", isBlueAiming ? "BLUE ALLIANCE" : "RED ALLIANCE");
             telemetry.addData("IS AIMED", turret.isAimed() ? "AIMED" : "ISN'T");
             telemetry.addData("DISTANCE TARGET", disTarget);
             telemetry.addData("GATE STATUS", servos.isOpened() ? "OPEN" : "CLOSE");
-
-            telemetry.addLine("STATES");
-            telemetry.addData("CURRENT FLYWHEEL", shooter.currentflyWheelState);
-            telemetry.addData("CURRENT GATE", servos.currentGate);
+            telemetry.addData("INTAKE STATUS", intake.currentIntake);
+            telemetry.addData("FLYWHEEL STATUS", shooter.currentflyWheelState);
+            telemetry.addData("GATE STATUS", servos.currentGate);
             telemetry.update();
         }
     }

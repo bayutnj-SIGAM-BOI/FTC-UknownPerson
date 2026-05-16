@@ -19,7 +19,7 @@ public class Intake {
         STOP,
     }
 
-    IntakeState currentIntake = IntakeState.STOP;
+    public IntakeState currentIntake = IntakeState.STOP;
 
     public Intake(HardwareMap hardwareMap) {
         Intake1 = hardwareMap.get(DcMotor.class, "Intake1");
@@ -54,8 +54,8 @@ public class Intake {
 
 //        AUTO SYSTEM
 
-//        AUTO STOP klo semua penuh
-        if (front && middle && atGate) { Intake1.setPower(0); Intake2.setPower(0);}
+//        AUTO STOP klo semua penuh dan belum siap nembak
+        if (front && middle && atGate && !isReadyToShoot) { Intake1.setPower(0); Intake2.setPower(0);}
 
 //        Launching
         if (isReadyToShoot && atGate) {
