@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.DECODE.Turret;
+package org.firstinspires.ftc.teamcode.DECODE.V2.SubSystem;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
@@ -81,7 +81,7 @@ public class TurretSub {
     }
 
     public boolean isAimed() {
-        return Math.abs(turretError) < 3.0;
+        return Math.abs(turretError) < Math.toRadians(3.0);
     }
     public double getDistanceTarget(double rX, double rY, double rH, Pose2d Target) {
         double turretX = rC.pivotX(rX, rH);

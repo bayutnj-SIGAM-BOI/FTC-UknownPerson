@@ -15,7 +15,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DECODE.PIDControl;
 import org.firstinspires.ftc.teamcode.DECODE.robotConfiguration;
-import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretSub;
+import org.firstinspires.ftc.teamcode.DECODE.V2.SubSystem.TurretSub;
 
 @TeleOp(name = "EXHIBITION TELEOP", group = "EXHIBITION")
 public class ExhibitionMecanumTeleOp extends OpMode {

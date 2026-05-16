@@ -8,14 +8,25 @@
     import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
     import org.firstinspires.ftc.teamcode.DECODE.PIDControl;
+    import org.firstinspires.ftc.teamcode.DECODE.V2.SubSystem.Intake;
+    import org.firstinspires.ftc.teamcode.DECODE.V2.SubSystem.ShooterSubs;
+    import org.firstinspires.ftc.teamcode.DECODE.V2.SubSystem.Servos;
+    import org.firstinspires.ftc.teamcode.DECODE.V2.SubSystem.TurretSub;
     import org.firstinspires.ftc.teamcode.DECODE.robotConfiguration;
     import org.firstinspires.ftc.teamcode.MecanumDrive;
 
     @Config
     @TeleOp(name = "V2 Mecanum Istanbul")
     public class robotTeleopIstanbul extends OpMode {
+//        Imports
         private  MecanumDrive drive;
         private PIDControl pidControl;
+        private Servos servos;
+        private TurretSub turret;
+        private ShooterSubs shooter;
+        private Intake intake;
+
+//        Configuration
         private final double SNAP_90 = Math.toRadians(90), SNAP_0 = Math.toRadians(0);
         private Pose2d snapTarget = robotConfiguration.blueAimingTarget;
         private final Pose2d StartPose = PosesStorage.currentPose;
@@ -26,6 +37,10 @@
         @Override
         public void init() {
             drive = new MecanumDrive(hardwareMap, StartPose);
+            servos = new Servos(hardwareMap);
+            turret = new TurretSub(hardwareMap);
+            shooter = new ShooterSubs(hardwareMap);
+            intake = new Intake(hardwareMap);
             pidControl = new PIDControl(robotConfiguration.HeadingKp, robotConfiguration.HeadingKi, robotConfiguration.HeadingKd);
         }
 
@@ -50,12 +65,18 @@
 
         @Override
         public void loop() {
+//            Odometry
             drive.localizer.update();
             Pose2d pos = drive.localizer.getPose();
+            PoseVelocity2d vel = drive.updatePoseEstimate();
             double xPose = pos.position.x;
             double yPose = pos.position.y;
             double hPose = pos.heading.toDouble();
-            double disTarget = Math.hypot(xPose - snapTarget.position.x, yPose - snapTarget.position.y);
+            double xVel = vel.linearVel.x;
+            double yVel = vel.linearVel.y;
+            double disTarget = turret.getDistanceTarget(xPose, yPose, hPose, snapTarget);
+
+//            Drivebase
 
             double slowMultiply = gamepad1.left_bumper ? 0.6 : 1.0;
             double forward = -gamepad1.left_stick_y * slowMultiply;
@@ -73,7 +94,6 @@
 
             if (autoheading) {
                 double error = targetAngle - hPose;
-
                 error = pidControl.angleWrapRadians(error);
 
                 if (Math.abs(error) < Math.toRadians(1)) {
@@ -84,6 +104,23 @@
             if (Math.abs(-gamepad1.right_stick_x) > 0.5) {autoheading = false;}
             drive.setDrivePowers(new PoseVelocity2d(new Vector2d(rotX, rotY), rotate));
 
+//            SubSystem (Servos)
+
+            if (gamepad1.a) { servos.setGate("open"); } else { servos.setGate("close"); }
+            servos.setHoodAngle(disTarget);
+
+//            SubSystem (Turret && Shooter)
+            turret.aimingTurret(snapTarget, xPose, yPose, hPose, xVel, yVel);
+            if (gamepad1.y && turret.isAimed()) { shooter.setFlyWheel(disTarget, "spins");} else if (!gamepad1.y && !turret.isAimed()) {
+                shooter.setFlyWheel(0, "stop");
+            }
+
+//            SubSytem (INTAKE)
+            double glt = gamepad1.left_trigger;
+            double grt = gamepad1.right_trigger;
+            boolean isReadyToShoot = servos.isOpened();
+            intake.intake(glt, grt, isReadyToShoot, telemetry);
+
 //           ================= TELEMETRY =================
             telemetry.addLine("ROBOT POSITION");
             telemetry.addData("START POSE", StartPose);
@@ -91,10 +128,16 @@
             telemetry.addData("yPose", yPose);
             telemetry.addData("HPose", Math.toDegrees(hPose));
 
-            telemetry.addLine("ODOMETRY SNAP TARGET");
+
+            telemetry.addLine("TURRET");
             telemetry.addData("SNAPPED TARGET", isBlueAiming ? "BLUE ALLIANCE" : "RED ALLIANCE");
-            telemetry.addData("SNAP ANGLE", Math.toDegrees(targetAngle));
-            telemetry.addData("Snap Goal", Math.toDegrees(Math.atan2(snapTarget.position.y - yPose, snapTarget.position.x - xPose)));
+            telemetry.addData("IS AIMED", turret.isAimed() ? "AIMED" : "ISN'T");
+            telemetry.addData("DISTANCE TARGET", disTarget);
+            telemetry.addData("GATE STATUS", servos.isOpened() ? "OPEN" : "CLOSE");
+
+            telemetry.addLine("STATES");
+            telemetry.addData("CURRENT FLYWHEEL", shooter.currentflyWheelState);
+            telemetry.addData("CURRENT GATE", servos.currentGate);
             telemetry.update();
         }
     }

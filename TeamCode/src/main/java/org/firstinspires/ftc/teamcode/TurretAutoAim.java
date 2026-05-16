@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.DECODE.robotConfiguration;
-import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretSub;
+import org.firstinspires.ftc.teamcode.DECODE.V2.SubSystem.TurretSub;
 
 @Config
 @TeleOp
