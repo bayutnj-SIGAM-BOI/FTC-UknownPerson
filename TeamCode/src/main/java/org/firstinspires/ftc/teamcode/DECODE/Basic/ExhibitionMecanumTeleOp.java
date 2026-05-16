@@ -15,13 +15,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DECODE.PIDControl;
 import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
-import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
+import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretSub;
 
 @TeleOp(name = "EXHIBITION TELEOP", group = "EXHIBITION")
-public class FieldOrientationMecanum extends OpMode {
+public class ExhibitionMecanumTeleOp extends OpMode {
     private PIDControl pidControl = new PIDControl(1, 0, 0.0008);
     private GoBildaPinpointDriver odo;
-    private TurretWithPoseEstimate turret;
+    private TurretSub turret;
     private RobotStatic rc = new RobotStatic();
     private DcMotor leftFront, rearLeft, rightFront, rearRight;
     private DcMotor Intake;
@@ -54,7 +54,7 @@ public class FieldOrientationMecanum extends OpMode {
 
     @Override
     public void init() {
-        turret = new TurretWithPoseEstimate(hardwareMap);
+        turret = new TurretSub(hardwareMap);
 
         leftFront = hardwareMap.get(DcMotor.class, "leftFront");
         rearLeft = hardwareMap.get(DcMotor.class, "rearLeft");
@@ -63,16 +63,16 @@ public class FieldOrientationMecanum extends OpMode {
 
         Intake = hardwareMap.get(DcMotor.class, "Intake");
         flyWheel = hardwareMap.get(DcMotorEx.class, "flyWheel");
-        PIDFCoefficients flywheelPID = new PIDFCoefficients(0.5000, 0, 0, 13.1000);
+        PIDFCoefficients flywheelPID = new PIDFCoefficients(200, 0, 0, 13.1000);
         flyWheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, flywheelPID);
         flyWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         Intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        rearLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
-        rearRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        rearRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        rearLeft.setDirection(DcMotorSimple.Direction.FORWARD);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -80,9 +80,10 @@ public class FieldOrientationMecanum extends OpMode {
         rearRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         hoodAngle = hardwareMap.get(Servo.class, "hoodAngle");
+        hoodAngle.setDirection(Servo.Direction.REVERSE);
 
         odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
-        odo.setOffsets(-7.5, 9, DistanceUnit.CM);
+        odo.setOffsets(-7.5, 8.5, DistanceUnit.CM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         odo.resetPosAndIMU();
@@ -103,19 +104,30 @@ public class FieldOrientationMecanum extends OpMode {
             telemetry.addData("ALLIANCE TARGET", "RED");
         }
         telemetry.addData("ALLIANCE", isBlueAlliance ? "BLUE" : "RED");
+        telemetry.update();
     }
 
     @Override
     public void loop() {
         odo.update();
         Pose2D pos = odo.getPosition();
+        double yVel = odo.getVelY(DistanceUnit.INCH);
+        double xVel = odo.getVelX(DistanceUnit.INCH);
+        double OffsetX = odo.getXOffset(DistanceUnit.CM);
+        double OffsetY = odo.getYOffset(DistanceUnit.CM);
         double dx = pos.getX(DistanceUnit.INCH);
         double dy = pos.getY(DistanceUnit.INCH);
         double heading = pos.getHeading(AngleUnit.RADIANS);
-        double dist = Math.hypot(dx - target.position.x, dy - target.position.y);
+        double VelX = odo.getVelX(DistanceUnit.INCH);
+        double VelY = odo.getVelY(DistanceUnit.INCH);
+        double dist = turret.getDistanceTarget(dx, dy, heading, target);
 
-        turret.aimingTurret(target, dx, dy, heading);
+        turret.aimingTurret(target, dx, dy, heading, xVel, yVel);
         hoodAngle.setPosition(rc.hoodAngle(dist));
+
+        double y = -gamepad1.left_stick_y;
+        double x = gamepad1.left_stick_x;
+        double rx = gamepad1.right_stick_x;
 
         if (gamepad1.dpad_right) {
             targetSnap = SNAP_0;
@@ -134,18 +146,13 @@ public class FieldOrientationMecanum extends OpMode {
             isAutoHeading = true;
         }
 
-        double y = -gamepad1.left_stick_y;
-        double x = gamepad1.left_stick_x;
-        double rx = gamepad1.right_stick_x;
-        boolean slowBtn = gamepad1.left_bumper;
-
-        if (Math.abs(rx) > 0.2) {
+        if (Math.abs(rx) > 0.5) {
             isAutoHeading = false;
             targetLocking = false;
         }
 
         if (gamepad1.right_bumper) {
-            double calculateTargetAngle = Math.atan2(target.position.y - dy, target.position.x - dx);
+            double calculateTargetAngle = Math.atan2(dy - target.position.y, dx - target.position.x);
             targetSnap = pidControl.angleWrapRadians(Math.toDegrees(calculateTargetAngle));
             targetLocking = true;
             isAutoHeading = true;
@@ -164,18 +171,11 @@ public class FieldOrientationMecanum extends OpMode {
             }
         }
 
-        double rotX = x * Math.cos(heading) + y * Math.sin(heading);
-        double rotY = x * Math.sin(heading) - y * Math.cos(heading);
-        if (slowBtn) {
-            rotX *= slowMode;
-            rotY *= slowMode;
-            rx *= slowMode;
-        }
-        double clamp = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1.0);
-        leftFront.setPower((rotY + rotX + rx) / clamp);
-        rearLeft.setPower((rotY - rotX + rx) / clamp);
-        rightFront.setPower((rotY - rotX - rx) / clamp);
-        rearRight.setPower((rotY + rotX - rx) / clamp);
+        double clamp = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
+        leftFront.setPower((y + x + rx) / clamp);
+        rearLeft.setPower((y - x + rx) / clamp);
+        rightFront.setPower((y - x - rx) / clamp);
+        rearRight.setPower((y + x - rx) / clamp);
 
         double lt = gamepad1.left_trigger;
         double rt = gamepad1.right_trigger;
@@ -220,6 +220,11 @@ public class FieldOrientationMecanum extends OpMode {
         telemetry.addLine("ROBOT");
         telemetry.addData("ROBOT X", dx);
         telemetry.addData("ROBOT Y", dy);
+        telemetry.addData("VEL X", VelX);
+        telemetry.addData("VEL Y", VelY);
+        telemetry.addData("CURRENT POS", pos);
+        telemetry.addData("OFFSET X", OffsetX);
+        telemetry.addData("OFFSET Y", OffsetY);
         telemetry.addData("R Heading", Math.toDegrees(heading));
         telemetry.addData("TARGET LOCKING", targetLocking ? "Locked" : "Not Lock");
         telemetry.addData("Distance TARGET", dist);
@@ -229,6 +234,7 @@ public class FieldOrientationMecanum extends OpMode {
         telemetry.addData("HOOD POSITION", hoodAngle.getPosition());
         telemetry.addData("Shotter TARGET VEL ERROR", flyWheel.getVelocity() - rc.flywheelSpeed(dist));
         telemetry.addData("TARGET Shooter VELOCITY", rc.flywheelSpeed(dist));
+        telemetry.addData("CURRENT DEG", turret.turretDeg());
 
         telemetry.addLine("STATE");
         telemetry.addData("Intake STATE", currentState);

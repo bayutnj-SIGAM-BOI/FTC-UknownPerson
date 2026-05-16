@@ -4,16 +4,20 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.util.Range;
 
-import org.opencv.core.Mat;
-
-import kotlin.math.MathKt;
-
 @Config
 public class RobotStatic {
-    public static Pose2d blueAimingTarget = new Pose2d(-57.1, -55.3, 0);
+//    POSES ON EACH PERIODE
+    public static Pose2d blueAimingTarget = new Pose2d(-62.7, 58.3, 0);
     public static Pose2d redAimingTarget = new Pose2d(-blueAimingTarget.position.x, -blueAimingTarget.position.y, 0);
-    public static Pose2d blueBeginPose = new Pose2d(-28.0, -28.2, 0);
-    public static Pose2d redBeginPose = new Pose2d(-blueBeginPose.position.x, -blueBeginPose.position.y, 0);
+    public static Pose2d blueBeginPoseTeleop = new Pose2d(-28.0, 28.2, Math.toRadians(90));
+    public static Pose2d redBeginPoseTeleop = new Pose2d(-blueBeginPoseTeleop.position.x, -blueBeginPoseTeleop.position.y, Math.toRadians(90));
+    public static Pose2d RedLoadingZone = new Pose2d(57.5, 58.5, 0);
+    public static Pose2d BlueLoadingZone = new Pose2d(57.5, -58.5, 0);
+    public static double[] TRIANGLE_X = {-55.3, -0.4, -55.3};
+    public static double[] TRIANGLE_Y = {-55.0, -0.2, 55.0};
+    public static double[] TRIANGLE_XS = {68.9, 46.4, 68.9};
+    public static double[] TRIANGLE_YS = {-22.7, 0.0, 22.4};
+
     public static double[] HoodedAngle = {0.0 ,0.9};
     public static double nearDistance = 32;
     public static double farDistance = 144 ;
@@ -22,22 +26,14 @@ public class RobotStatic {
     public static double INTAKE_SPEED = 1.0;
     public static double TURRET_OFFSET_X = 0.0;
     public static double TURRET_OFFSET_Y = 0.0;
-    public static double[] TRIANGLE_X = {-55.3, -0.4, -55.3};
-    public static double[] TRIANGLE_Y = {-55.0, -0.2, 55.0};
-    public static double[] TRIANGLE_XS = {68.9, 46.4, 68.9};
-    public static double[] TRIANGLE_YS = {-22.7, 0.0, 22.4};
     public static double MIN_ZONE_X = -72;
     public static double MAX_ZONE_X = 72;
     public static double MIN_ZONE_Y = -72;
     public static double MAX_ZONE_Y = 72;
 
-//    First index is X and second is Y
-    public static double[] RedLoadingZone = {57.5, 58.5};
-    public static double[] BlueLoadingZone = {57.5, -58.5};
-
     public static double HeadingKp = 2;
     public static double HeadingKi = 0.0;
-    public static double HeadingKd = 0.0;
+    public static double HeadingKd = 0.0008;
 
     public double PolynomialShooter(double d) {
 //        Coefficient. The data got from the desmos.
@@ -52,8 +48,8 @@ public class RobotStatic {
     }
 
     public double flywheelSpeed(double dist) {
-        double power = 0.00000410854 * Math.pow(dist, 4) + -0.00143996 * Math.pow(dist, 3)
-                + 0.157152 * Math.pow(dist, 2) + -0.107505 + dist + 1438.97499;
+        double power = -0.00000830926 * Math.pow(dist, 4) + 0.00307213 * Math.pow(dist, 3)
+                + 0.41343 * Math.pow(dist, 2) + 30.96129 + dist + 1111.89858;
         if (power < 0) power = 0;
         if (power > 2150) power = 2150;
         return power;

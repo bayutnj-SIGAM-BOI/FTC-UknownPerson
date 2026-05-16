@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
-import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretWithPoseEstimate;
+import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretSub;
 
 @Config
 @TeleOp
@@ -21,8 +21,8 @@ public class TurretAutoAim extends OpMode {
     // ── Hardware ──────────────────────────────────────────────────────────────
     private Servo angleAdjuster, stooperGate;
     private DcMotorEx Shooter;
-    private TankDrive drive;
-    private TurretWithPoseEstimate turret;
+    private MecanumDrive drive;
+    private TurretSub turret;
     private final RobotStatic rC = new RobotStatic();
 
     // ── Targets ───────────────────────────────────────────────────────────────
@@ -56,12 +56,9 @@ public class TurretAutoAim extends OpMode {
     // ── Init ──────────────────────────────────────────────────────────────────
     @Override
     public void init() {
-        drive = new TankDrive(hardwareMap, new Pose2d(new Vector2d(55.1, -9.1), 0));
-        turret = new TurretWithPoseEstimate(hardwareMap);
+        drive = new MecanumDrive(hardwareMap, new Pose2d(new Vector2d(0, 0), 0));
+        turret = new TurretSub(hardwareMap);
 
-        angleAdjuster = hardwareMap.get(Servo.class, "angleAdjuster");
-        stooperGate = hardwareMap.get(Servo.class, "Stooper");
-        Shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
 
         pidTimer.reset();
     }
@@ -76,6 +73,8 @@ public class TurretAutoAim extends OpMode {
 
         double robotX = pose.position.x;
         double robotY = pose.position.y;
+        double xVel = 0.0;
+        double yVel = 0.0;
         double heading = pose.heading.toDouble();
 
         // ── Auto-aim toggle (gamepad1 X, edge-detected) ──────────────────────
@@ -131,7 +130,7 @@ public class TurretAutoAim extends OpMode {
 
         // ── Turret aiming ─────────────────────────────────────────────────────
         if (isFound) {
-            turret.aimingTurret(target, robotX, robotY, heading);
+            turret.aimingTurret(target, robotX, robotY, heading, xVel, yVel);
         }
 
         // ── Hood angle ────────────────────────────────────────────────────────

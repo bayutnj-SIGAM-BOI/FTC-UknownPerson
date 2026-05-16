@@ -22,10 +22,10 @@ public class Act {
     public Act(HardwareMap hardwareMap, Telemetry telemetry) {
         rc = new RobotStatic();
 
-        Shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
+        Shooter = hardwareMap.get(DcMotorEx.class, "flyWheel");
         Intake = hardwareMap.get(DcMotorEx.class, "Intake");
-        stooperGate = hardwareMap.get(Servo.class, "Stooper");
-        angleAdjuster = hardwareMap.get(Servo.class, "angleAdjuster");
+//        stooperGate = hardwareMap.get(Servo.class, "Stooper");
+        angleAdjuster = hardwareMap.get(Servo.class, "hoodAngle");
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(0.5000, 0, 0, 13.1000);
         Shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);

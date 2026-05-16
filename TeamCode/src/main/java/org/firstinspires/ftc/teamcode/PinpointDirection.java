@@ -17,7 +17,7 @@ public class PinpointDirection extends LinearOpMode {
         odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
         odo.setOffsets(-6, 1, DistanceUnit.CM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         odo.resetPosAndIMU();
 
         waitForStart();
@@ -28,6 +28,10 @@ public class PinpointDirection extends LinearOpMode {
 
             packet.put("X", odo.getPosX(DistanceUnit.INCH));
             packet.put("Y", odo.getPosY(DistanceUnit.INCH));
+
+            telemetry.addData("X", odo.getPosX(DistanceUnit.INCH));
+            telemetry.addData("Y", odo.getPosY(DistanceUnit.INCH));
+            telemetry.update();
 
             FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }

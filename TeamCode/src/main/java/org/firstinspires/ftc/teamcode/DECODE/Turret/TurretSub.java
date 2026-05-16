@@ -12,29 +12,30 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
 
 @Config
-public class TurretWithPoseEstimate {
+public class TurretSub {
     final RobotStatic rC = new RobotStatic();
     DcMotorEx spinTurret;
     ElapsedTime spinTimer = new ElapsedTime();
-    private final double TICKS_PER_REV = ((((1+(46/17))) * (1+(46/17))) * (1+(46/17)) * 28);
+    private final double TICKS_PER_REV = ((((1 + (46.0 / 17.0))) * (1 + (46.0 / 17.0))) * (1 + (46.0 / 17.0)) * 28);
     private final double GearRatio = 100.0 / 20.0;
     private final double OutputSpeed = TICKS_PER_REV * GearRatio;
-    final double TicksPerDegree = OutputSpeed / 360.0;
+    final double TicksPerDegree = (OutputSpeed / 360.0);
     private final double turretLimitDeg = 135.0;
     private double integralSum = 0;
     private double lastError = 0;
     private final double integralLimit = 15.0;
     public static double kP = 0.05;
-    public static double kI = 0.002;
+    public static double kI = 0;
+    public static double kF = 0;
 
     public static double kD = 0.005;
-    private final double maxLimit = 90;
-    private final double MinLimit = -190;
+    private final double maxLimit = Math.toRadians(120);
+    private final double MinLimit = Math.toRadians(-120);
     private double turretError = 0.0;
 
-    public TurretWithPoseEstimate(HardwareMap hardwareMap) {
+    public TurretSub(HardwareMap hardwareMap) {
         spinTurret = hardwareMap.get(DcMotorEx.class, "Turret");
-        spinTurret.setDirection(DcMotorSimple.Direction.REVERSE);
+        spinTurret.setDirection(DcMotorSimple.Direction.FORWARD);
         spinTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         spinTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         spinTurret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -42,22 +43,27 @@ public class TurretWithPoseEstimate {
         spinTimer.reset();
     }
 
-    public void aimingTurret(Pose2d Target, double RobotX, double RobotY, double robotHeading) {
+    public void aimingTurret(Pose2d Target, double RobotX, double RobotY, double robotHeading, double VelX, double VelY) {
+        double dist = getDistanceTarget(RobotX, RobotY, robotHeading, Target);
+        double tof = dist / 200.0;
+
+        Pose2d predicted = new Pose2d(Target.position.x + VelX * tof, Target.position.y + VelY * tof, Target.heading.toDouble() );
+
         double pivotX = rC.pivotX(RobotX, robotHeading);
         double pivotY = rC.pivotY(RobotY, robotHeading);
 
-        double x = Target.position.x - pivotX;
-        double y = Target.position.y - pivotY;
+        double x = predicted.position.x - pivotX;
+        double y = predicted.position.y - pivotY;
 
         double angle = Math.atan2(y, x); // Vector(Pose) -> Radians
-        double turret = Math.toDegrees(angle) - Math.toDegrees(robotHeading);
-        double currentDeg = spinTurret.getCurrentPosition() / TicksPerDegree;
+        double turret = angleWrapDegree(angle - robotHeading);
+        double currentDeg = turretRad();
 
 //        Limit rotasinya
         if (currentDeg > maxLimit + 5) {
-            turret = -360;
+            turret = Math.toRadians(-360);
         } else if (currentDeg < MinLimit - 5) {
-            turret = 360;
+            turret = Math.toRadians(360);
         }
         turret = Range.clip(turret, MinLimit, maxLimit);
         double error = angleWrapDegree(turret - currentDeg);
@@ -67,8 +73,24 @@ public class TurretWithPoseEstimate {
         spinTurret.setPower(Range.clip(calculatePID(error), -1, 1));
     }
 
+    public double turretDeg() {
+        return spinTurret.getCurrentPosition() / TicksPerDegree;
+    }
+    public double turretRad() {
+        return Math.toRadians(turretDeg());
+    }
+
     public boolean isAimed() {
         return Math.abs(turretError) < 3.0;
+    }
+    public double getDistanceTarget(double rX, double rY, double rH, Pose2d Target) {
+        double turretX = rC.pivotX(rX, rH);
+        double turretY = rC.pivotY(rY, rH);
+
+        double x = Target.position.x - turretX;
+        double y = Target.position.y - turretY;
+
+        return Math.hypot(x, y);
     }
 
     private double calculatePID(double error) {
@@ -94,23 +116,23 @@ public class TurretWithPoseEstimate {
         double derivative = (error - lastError) / dt;
         lastError = error;
 
-        double output = (error * kP) + (integralSum * kI) + (derivative * kD);
+        double pidTerm = (error * kP) + (integralSum * kI) + (derivative * kD);
+        double ff = kF * Math.signum(error);
+
+        double totalPidf = pidTerm + ff;
 //        klo ada target miss kecil bisa dibenerin klo si motor gk kuat
-        if (Math.abs(output) < 0.5 && Math.abs(error) > 0.5) {
-            output = 0.05 * Math.signum(output);
+        if (Math.abs(totalPidf) < 0.05 && Math.abs(error) > 0.5) {
+            totalPidf = 0.05 * Math.signum(totalPidf);
         }
 
-        return output;
+        return totalPidf;
     }
-//    NgeWrap putaran
-    private double angleWrapDegree(double degree) {
-        while (degree > 180) {
-            degree -= 360;
-        }
-        while (degree < -180) {
-            degree += 360;
-        }
-        return degree;
+
+    //    NgeWrap putaran
+    private double angleWrapDegree(double angle) {
+        while (angle > Math.PI) angle -= 2 * Math.PI;
+        while (angle < -Math.PI) angle += 2 * Math.PI;
+        return angle;
     }
 
 

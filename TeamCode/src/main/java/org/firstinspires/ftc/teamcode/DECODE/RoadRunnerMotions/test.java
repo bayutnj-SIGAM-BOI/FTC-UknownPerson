@@ -6,21 +6,21 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.TankDrive;
+import org.firstinspires.ftc.teamcode.MecanumDrive;
 
 @Autonomous
-public class teset extends LinearOpMode {
+public class test extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
         Pose2d beginPose = new Pose2d(0, 0, 0);
-        TankDrive drive = new TankDrive(hardwareMap, beginPose);
+        MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
 
         Action test = drive.actionBuilder(beginPose)
                 .lineToX(4)
                 .build();
 
-        waitForStart();
+        waitForStart(); 
         Actions.runBlocking(test);
     }
 }
