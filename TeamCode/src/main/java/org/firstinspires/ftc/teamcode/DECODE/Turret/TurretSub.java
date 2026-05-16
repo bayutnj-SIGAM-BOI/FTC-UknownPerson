@@ -16,7 +16,7 @@ public class TurretSub {
     final RobotStatic rC = new RobotStatic();
     DcMotorEx spinTurret;
     ElapsedTime spinTimer = new ElapsedTime();
-    private final double TICKS_PER_REV = ((((1 + (46.0 / 17.0))) * (1 + (46.0 / 17.0))) * (1 + (46.0 / 17.0)) * 28);
+    private final double TICKS_PER_REV = ((((1+(46/17))) * (1+(46/11))) * 28);
     private final double GearRatio = 100.0 / 20.0;
     private final double OutputSpeed = TICKS_PER_REV * GearRatio;
     final double TicksPerDegree = (OutputSpeed / 360.0);
@@ -26,15 +26,15 @@ public class TurretSub {
     private final double integralLimit = 15.0;
     public static double kP = 0.05;
     public static double kI = 0;
+    public static double kD = 0.005;
     public static double kF = 0;
 
-    public static double kD = 0.005;
     private final double maxLimit = Math.toRadians(120);
     private final double MinLimit = Math.toRadians(-120);
     private double turretError = 0.0;
 
     public TurretSub(HardwareMap hardwareMap) {
-        spinTurret = hardwareMap.get(DcMotorEx.class, "Turret");
+        spinTurret = hardwareMap.get(DcMotorEx.class, "rotateTurret");
         spinTurret.setDirection(DcMotorSimple.Direction.FORWARD);
         spinTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         spinTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
