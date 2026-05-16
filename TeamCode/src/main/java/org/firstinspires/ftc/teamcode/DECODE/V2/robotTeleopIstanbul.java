@@ -8,7 +8,7 @@
     import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
     import org.firstinspires.ftc.teamcode.DECODE.PIDControl;
-    import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
+    import org.firstinspires.ftc.teamcode.DECODE.robotConfiguration;
     import org.firstinspires.ftc.teamcode.MecanumDrive;
 
     @Config
@@ -17,7 +17,7 @@
         private  MecanumDrive drive;
         private PIDControl pidControl;
         private final double SNAP_90 = Math.toRadians(90), SNAP_0 = Math.toRadians(0);
-        private Pose2d snapTarget = RobotStatic.blueAimingTarget;
+        private Pose2d snapTarget = robotConfiguration.blueAimingTarget;
         private final Pose2d StartPose = PosesStorage.currentPose;
         private boolean isBlueAiming = true, isRedAiming = false;
         private boolean autoheading = false;
@@ -26,20 +26,20 @@
         @Override
         public void init() {
             drive = new MecanumDrive(hardwareMap, StartPose);
-            pidControl = new PIDControl(RobotStatic.HeadingKp, RobotStatic.HeadingKi, RobotStatic.HeadingKd);
+            pidControl = new PIDControl(robotConfiguration.HeadingKp, robotConfiguration.HeadingKi, robotConfiguration.HeadingKd);
         }
 
         @Override
         public void init_loop() {
             telemetry.addLine("BLUE ALLIANCE (DPAD_LEFT) | RED ALLIANCE (DPAD_RIGHT)");
             if (gamepad1.dpad_left) {
-                snapTarget = RobotStatic.blueAimingTarget;
+                snapTarget = robotConfiguration.blueAimingTarget;
                 isBlueAiming = true;
                 isRedAiming = false;
                 telemetry.addData("Alliance", "BLUE");
             }
             if (gamepad1.dpad_right) {
-                snapTarget = RobotStatic.redAimingTarget;
+                snapTarget = robotConfiguration.redAimingTarget;
                 isRedAiming = true;
                 isBlueAiming = false;
                 telemetry.addData("Alliance", "RED");

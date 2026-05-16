@@ -5,7 +5,7 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.util.Range;
 
 @Config
-public class RobotStatic {
+public class robotConfiguration {
 //    POSES ON EACH PERIODE
     public static Pose2d blueAimingTarget = new Pose2d(-62.7, 58.3, 0);
     public static Pose2d redAimingTarget = new Pose2d(-blueAimingTarget.position.x, -blueAimingTarget.position.y, 0);

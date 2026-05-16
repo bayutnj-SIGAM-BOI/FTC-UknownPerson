@@ -9,11 +9,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
+import org.firstinspires.ftc.teamcode.DECODE.robotConfiguration;
 
 @Config
 public class TurretSub {
-    final RobotStatic rC = new RobotStatic();
+    final robotConfiguration rC = new robotConfiguration();
     DcMotorEx spinTurret;
     ElapsedTime spinTimer = new ElapsedTime();
     private final double TICKS_PER_REV = ((((1+(46/17))) * (1+(46/11))) * 28);

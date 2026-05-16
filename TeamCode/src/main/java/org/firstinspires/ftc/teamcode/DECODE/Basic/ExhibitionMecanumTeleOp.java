@@ -14,7 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DECODE.PIDControl;
-import org.firstinspires.ftc.teamcode.DECODE.RobotStatic;
+import org.firstinspires.ftc.teamcode.DECODE.robotConfiguration;
 import org.firstinspires.ftc.teamcode.DECODE.Turret.TurretSub;
 
 @TeleOp(name = "EXHIBITION TELEOP", group = "EXHIBITION")
@@ -22,7 +22,7 @@ public class ExhibitionMecanumTeleOp extends OpMode {
     private PIDControl pidControl = new PIDControl(1, 0, 0.0008);
     private GoBildaPinpointDriver odo;
     private TurretSub turret;
-    private RobotStatic rc = new RobotStatic();
+    private robotConfiguration rc = new robotConfiguration();
     private DcMotor leftFront, rearLeft, rightFront, rearRight;
     private DcMotor Intake;
     private DcMotorEx flyWheel;
@@ -40,7 +40,7 @@ public class ExhibitionMecanumTeleOp extends OpMode {
 
     IntakeState currentState = IntakeState.STOP;
     ShooterState scState = ShooterState.STOP;
-    Pose2d target = RobotStatic.blueAimingTarget;
+    Pose2d target = robotConfiguration.blueAimingTarget;
     private boolean isRedAlliance = false, isBlueAlliance = true;
 
     private final Pose2D START_POSE = new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0);
@@ -93,12 +93,12 @@ public class ExhibitionMecanumTeleOp extends OpMode {
     @Override
     public void init_loop() {
         if (gamepad1.x) {
-            target = RobotStatic.blueAimingTarget;
+            target = robotConfiguration.blueAimingTarget;
             isBlueAlliance = true;
             isRedAlliance = false;
             telemetry.addData("ALLIANCE TARGET", "BLUE");
         } else if (gamepad1.b) {
-            target = RobotStatic.redAimingTarget;
+            target = robotConfiguration.redAimingTarget;
             isRedAlliance = true;
             isBlueAlliance = false;
             telemetry.addData("ALLIANCE TARGET", "RED");
@@ -189,10 +189,10 @@ public class ExhibitionMecanumTeleOp extends OpMode {
         }
         switch (currentState) {
             case INTAKE_FORWARD:
-                Intake.setPower(RobotStatic.INTAKE_SPEED);
+                Intake.setPower(robotConfiguration.INTAKE_SPEED);
                 break;
             case INTAKE_REVERSED:
-                Intake.setPower(-RobotStatic.INTAKE_SPEED);
+                Intake.setPower(-robotConfiguration.INTAKE_SPEED);
                 break;
             default:
                 Intake.setPower(0);
