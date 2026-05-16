@@ -12,8 +12,8 @@
     import org.firstinspires.ftc.teamcode.MecanumDrive;
 
     @Config
-    @TeleOp(name = "V2 Mecanum")
-    public class  TeleopWithRoadrunnerIntergrations extends OpMode {
+    @TeleOp(name = "V2 Mecanum Istanbul")
+    public class robotTeleopIstanbul extends OpMode {
         private  MecanumDrive drive;
         private PIDControl pidControl;
         private final double SNAP_90 = Math.toRadians(90), SNAP_0 = Math.toRadians(0);
