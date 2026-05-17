@@ -45,23 +45,26 @@ public class Intake {
             Intake1.setPower(1.0);
             Intake2.setPower(0.6);
             currentIntake = IntakeState.INTAKE;
+            return;
         }
         else if (REVERSED > 0.1) {
             Intake1.setPower(-1);
             Intake2.setPower(-1);
             currentIntake = IntakeState.REVERSED;
+            return;
         }
 
 //        AUTO SYSTEM
 
 //        AUTO STOP klo semua penuh dan belum siap nembak
-        if (front && middle && atGate && !isReadyToShoot) { Intake1.setPower(0); Intake2.setPower(0);}
+        if (front && middle && atGate && !isReadyToShoot) { Intake1.setPower(0); Intake2.setPower(0); return;}
 
 //        Launching
         if (isReadyToShoot && atGate) {
             Intake2.setPower(1.0);
             Intake1.setPower(0.8);
             currentIntake = IntakeState.LAUNCHING;
+            return;
         }
 
         //        Tranfer dari tengah ke tengah
@@ -69,6 +72,7 @@ public class Intake {
             Intake1.setPower(1.0);
             Intake2.setPower(0.6);
             currentIntake = IntakeState.TRANSFER;
+            return;
         }
 
 //        Transfer bola dari tengah kebelakang
@@ -76,6 +80,7 @@ public class Intake {
             Intake1.setPower(1.0);
             Intake2.setPower(0.6);
             currentIntake = IntakeState.TRANSFER;
+            return;
         }
 
         Intake1.setPower(0);

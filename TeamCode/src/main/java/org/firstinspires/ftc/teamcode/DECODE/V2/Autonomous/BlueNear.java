@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.DECODE.V2;
+package org.firstinspires.ftc.teamcode.DECODE.V2.Autonomous;
 
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
@@ -8,10 +8,11 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.teamcode.DECODE.V2.PosesStorage;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 
 @Autonomous
-public class Pathing extends LinearOpMode {
+public class BlueNear extends LinearOpMode {
     MecanumDrive drive;
 
     private final Pose2d StartPose = (new Pose2d(-55.3, -55.2, -90));

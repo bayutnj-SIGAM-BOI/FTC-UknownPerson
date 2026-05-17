@@ -40,6 +40,6 @@ public class Servos {
     }
 
      public boolean isOpened() {
-        return isOpened = true;
+        return isOpened;
      }
 }
